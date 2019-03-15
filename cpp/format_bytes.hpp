@@ -64,3 +64,39 @@
  *
  */
 
+#ifndef YMH_MISC_FORMAT_BYTES_HPP
+#define YMH_MISC_FORMAT_BYTES_HPP
+
+namespace ymh
+{
+namespace misc
+{
+    
+template <typename CharT> 
+struct Indicators;
+
+template <>
+struct Indicators<char> final
+{
+    static char const* const value[];
+    static std::size_t const size;
+};
+char const* const Indicators<char>::value[]
+= { "Bytes", "KB", "MB", "GB", "TB" };
+std::size_t const Indicators<char>::size = sizeof(value) / sizeof(value[0]);
+
+template <>
+struct Indicators<wchar_t> final
+{
+    static wchar_t const* value[];
+    static std::size_t const size;
+};
+wchar_t const* Indicators<wchar_t>::value[]
+= { L"Bytes", L"KB", L"MB", L"GB", L"TB" };
+std::size_t const Indicators<wchar_t>::size = sizeof(value) / sizeof(value[0]);
+
+}  // namespace misc
+}  // namespace ymh
+
+#endif  // YMH_MISC_FORMAT_BYTES_HPP
+
