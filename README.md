@@ -4,7 +4,14 @@ Miscellaneous skills for C, C++11/14/17/20, Python2/3, ECMAScript5/6 and Shell S
 
 ## C/C++/11/14/17/20
 
-### format_bytes
+### [format_bytes](https://github.com/yanminhui/misc/blob/master/cpp/format_bytes.hpp)
+
+Given a byte count, converts it to human-readable format 
+and returns a string consisting of a value and a units indicator.
+
+Depending on the size of the value, the units part is bytes, 
+KB (kibibytes), MB (mebibytes), GB (gibibytes), TB (tebibytes), 
+or PB (pebibytes)...
 
 **Function Prototype**
 
