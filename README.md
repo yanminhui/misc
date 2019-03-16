@@ -17,33 +17,34 @@ or PB (pebibytes)...
 
 ```.cpp
 template<typename CharT, typename ByteT>
-void format_bytes(std::basic_string<CharT>& repr                     // (1)
-                 , ByteT const bytes
-                 , std::size_t const decimal=2u
-                 , std::size_t const reduced_unit=1024u);
+CharT const* format_bytes(std::basic_string<CharT>& repr             // (1)
+                        , ByteT const bytes
+                        , std::size_t const decimal=2u
+                        , std::size_t const reduced_unit=1024u);
 
-template<typename CharT, typename ByteT>
-void format_bytes(std::basic_string<CharT>& repr                     // (2)
-                , ByteT const bytes
-                , std::basic_string<CharT> const& indicator
-                , std::size_t const decimal=2u
-                , std::size_t const reduced_unit=1024u);
-
-template<typename CharT, typename ByteT, typename InputIt>
-void format_bytes(std::basic_string<CharT>& repr                     // (3)
-                , ByteT const bytes
-                , InputIt first, InputIt last
-                , std::size_t const decimal=2u
-                , std::size_t const reduced_unit=1024u);
+template<typename CharT, typename ByteT, typename IndicatorT>
+CharT const* format_bytes(std::basic_string<CharT>& repr             // (2)
+                        , ByteT const bytes
+                        , IndicatorT&& indicator
+                        , std::size_t const decimal=2u
+                        , std::size_t const reduced_unit=1024u);
 
 template<typename CharT, typename ByteT, typename InputIt>
-void format_bytes(std::basic_string<CharT>& repr                     // (4)
-                , ByteT const bytes
-                , InputIt first, InputIt last
-                , std::basic_string<CharT> const& indicator
-                , std::size_t const decimal=2u
-                , std::size_t const reduced_unit=1024u);
- ```
+CharT const* format_bytes(std::basic_string<CharT>& repr             // (3)
+                        , ByteT const bytes
+                        , InputIt first, InputIt last
+                        , std::size_t const decimal=2u
+                        , std::size_t const reduced_unit=1024u);
+
+template<typename CharT, typename ByteT
+       , typename InputIt, typename IndicatorT>
+CharT const* format_bytes(std::basic_string<CharT>& repr             // (4)
+                        , ByteT const bytes
+                        , InputIt first, InputIt last
+                        , IndicatorT&& indicator
+                        , std::size_t const decimal=2u
+                        , std::size_t const reduced_unit=1024u);
+```
 
 **Usage**
 
@@ -51,7 +52,7 @@ void format_bytes(std::basic_string<CharT>& repr                     // (4)
 using namespace ymh::misc;
 
 std::string s;
-format_bytes(s, 18446640);
+std::cout << format_bytes(s, 18446640) << std::endl;
 ```
 
 equal to:
