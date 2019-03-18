@@ -22,7 +22,8 @@
  *                           , std::size_t const decimal=2u
  *                           , std::size_t const reduced_unit=1024u);
  * (2)
- *   template<typename CharT, typename ByteT, typename IndicatorT>
+ *   template<typename CharT, typename ByteT, typename IndicatorT
+            , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
  *   CharT const* format_bytes(std::basic_string<CharT>& repr
  *                           , ByteT const bytes
  *                           , IndicatorT&& indicator
@@ -91,11 +92,10 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
                         , std::size_t const reduced_unit=1024u)
 {
     constexpr auto before_begin_step = -1; 
-    if (first == last)
+    if (first == last || bytes < 0)
     {
         throw std::system_error(std::make_error_code
-                (std::errc::invalid_argument)
-            , "[first, last) is invalid range in format_bytes");
+                (std::errc::invalid_argument), "format_bytes");
     }
 
     // `indicator` may be 
@@ -119,39 +119,30 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
             ++indicator_step;
         }
     }
+    
+    // calc `value`, `indicator_step` and `indicator_s`
+    if (indicator_step == before_begin_step)
+    {
+        auto t = std::floor(std::log(bytes) / std::log(reduced_unit));
+        indicator_step = static_cast<decltype(indicator_step)>(t);
+        if (indicator_step <= before_begin_step)
+        {
+            indicator_step = before_begin_step + 1;
+        }
+        else if (std::distance(first, last) <= indicator_step)
+        {
+            indicator_step = std::distance(first, last) - 1;   
+        }
+
+        std::advance(first, indicator_step);
+        indicator_s = *first;
+    }
 
     // represent
     std::basic_ostringstream<CharT> oss;
-    oss << std::fixed << std::setprecision(decimal);
-    
-    // calc `value`
-    if (0 < bytes)
-    {	
-        if (indicator_step == before_begin_step)
-        // try calc `indicator_step` and `indicator_s`
-        {
-            auto t = std::floor(std::log(bytes) / std::log(reduced_unit));
-            indicator_step = static_cast<decltype(indicator_step)>(t);
-            if (indicator_step <= before_begin_step)
-            {
-                indicator_step = before_begin_step + 1;
-            }
-            else if (std::distance(first, last) <= indicator_step)
-            {
-                indicator_step = std::distance(first, last) - 1;   
-            }
-
-            std::advance(first, indicator_step);
-            indicator_s = *first;
-        }
-        oss << (bytes / (std::pow(reduced_unit, indicator_step) * 1.0));
-    }
-    else
-    {
-        oss << bytes;
-    }
-
-    oss << oss.widen(' ') << indicator_s;
+    oss << std::fixed << std::setprecision(decimal)
+        << bytes / std::pow(reduced_unit, indicator_step)
+        << oss.widen(' ') << indicator_s;
     repr = oss.str();
     return repr.c_str();
 }
@@ -168,31 +159,46 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
                       , decimal, reduced_unit);
 }
 
-template<typename CharT, typename ByteT, typename IndicatorT>
+template<typename CharT, typename ByteT, typename IndicatorT
+       , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
 CharT const* format_bytes(std::basic_string<CharT>& repr
                         , ByteT const bytes
                         , IndicatorT&& indicator
                         , std::size_t const decimal=2u
                         , std::size_t const reduced_unit=1024u)
-{ 
+{
     struct Indicators
     {
-        static constexpr std::initializer_list<char const*> get(char) 
+        char const* invoke(std::basic_string<char>& repr
+                         , ByteT const bytes
+                         , std::basic_string<char> const& indicator
+                         , std::size_t const decimal
+                         , std::size_t reduced_unit) const
         {
-            return {"Bytes", "KB", "MB", "GB"
-                  , "TB", "PB", "EB", "ZB", "YB"};
-        }
-        static constexpr std::initializer_list<wchar_t const*> get(wchar_t)
+            constexpr char const* v[] = {"Bytes", "KB", "MB", "GB"
+                                       , "TB", "PB", "EB", "ZB", "YB"};
+            constexpr auto c = sizeof(v) / sizeof(v[0]);
+            return format_bytes(repr, bytes, v, v+c
+                              , indicator, decimal, reduced_unit);
+	    }
+
+        wchar_t const* invoke(std::basic_string<wchar_t>& repr
+                            , ByteT const bytes
+                            , std::basic_string<wchar_t> const& indicator
+                            , std::size_t const decimal
+                            , std::size_t reduced_unit) const
         {
-            return {L"Bytes", L"KB", L"MB", L"GB"
-                  , L"TB", L"PB", L"EB", L"ZB", L"YB"};
-        }
+            constexpr wchar_t const* v[] = {L"Bytes", L"KB", L"MB", L"GB"
+                                          , L"TB", L"PB", L"EB", L"ZB", L"YB"};
+            constexpr auto c = sizeof(v) / sizeof(v[0]);
+            return format_bytes(repr, bytes, v, v+c
+                              , indicator, decimal, reduced_unit);
+	    }
     };
-    
-    constexpr auto v = Indicators::get(CharT());
-    return format_bytes(repr, bytes, std::begin(v), std::end(v)
-                      , std::forward<IndicatorT&&>(indicator)
-                      , decimal, reduced_unit);
+
+    constexpr Indicators ind;
+    return ind.invoke(repr, bytes, indicator
+                    , decimal, reduced_unit);
 }
 
 template<typename CharT, typename ByteT>

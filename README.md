@@ -22,7 +22,8 @@ CharT const* format_bytes(std::basic_string<CharT>& repr             // (1)
                         , std::size_t const decimal=2u
                         , std::size_t const reduced_unit=1024u);
 
-template<typename CharT, typename ByteT, typename IndicatorT>
+template<typename CharT, typename ByteT, typename IndicatorT
+       , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
 CharT const* format_bytes(std::basic_string<CharT>& repr             // (2)
                         , ByteT const bytes
                         , IndicatorT&& indicator
