@@ -101,7 +101,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
     // `indicator` may be 
     // `CharT const*`, `CharT const[]` or `std::basic_string<CharT>`
     std::basic_string<CharT> indicator_s(indicator);
-    
+
     // try get `indicator_step` and `indicator_s`
     auto indicator_step = before_begin_step;
     if (indicator_s.empty())
@@ -119,7 +119,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
             ++indicator_step;
         }
     }
-    
+
     // calc `value`, `indicator_step` and `indicator_s`
     if (indicator_step == before_begin_step)
     {
@@ -131,7 +131,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
         }
         else if (std::distance(first, last) <= indicator_step)
         {
-            indicator_step = std::distance(first, last) - 1;   
+            indicator_step = std::distance(first, last) - 1;
         }
 
         std::advance(first, indicator_step);
@@ -180,7 +180,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
             constexpr auto c = sizeof(v) / sizeof(v[0]);
             return format_bytes(repr, bytes, v, v+c
                               , indicator, decimal, reduced_unit);
-	    }
+        }
 
         wchar_t const* invoke(std::basic_string<wchar_t>& repr
                             , ByteT const bytes
@@ -193,7 +193,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
             constexpr auto c = sizeof(v) / sizeof(v[0]);
             return format_bytes(repr, bytes, v, v+c
                               , indicator, decimal, reduced_unit);
-	    }
+        }
     };
 
     constexpr Indicators ind;
