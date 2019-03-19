@@ -3,7 +3,7 @@
  * FORMAT_BYTES
  * ============ https://github.com/yanminhui/misc
  *
- * Licensed under the MIT License <http:*opensource.org/licenses/MIT>.
+ * Licensed under the MIT License <http://opensource.org/licenses/MIT>.
  * Copyright (c) 2019 yanminhui <mailto:yanminhui163@163.com>.
  *
  * Given a byte count, converts it to human-readable format 
@@ -167,7 +167,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
                         , std::size_t const decimal=2u
                         , std::size_t const reduced_unit=1024u)
 {
-    struct Indicators
+    struct Indicators final
     {
         char const* invoke(std::basic_string<char>& repr
                          , ByteT const bytes
