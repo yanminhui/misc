@@ -21,14 +21,18 @@ def get_size(filename):
 
 def format_bytes(byte_count):
     indicators = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
-    step = int(math.floor(math.log(byte_count) / math.log(1024))) if byte_count else 0
+    step = 0
+    if byte_count:
+        step = int(math.floor(math.log(byte_count) / math.log(1024)))
     value = round(byte_count / math.pow(1024, step), 2)
     indicator = indicators[step]
     return '{} {}'.format(value, indicator)
 
 def format_seconds(seconds):
     indicators = ('secs', 'mins', 'hour')
-    step = int(math.floor(math.log(seconds) / math.log(60))) if 1 < seconds else 0
+    step = 0
+    if seconds:
+        step = int(math.floor(math.log(seconds) / math.log(60)))
     if len(indicators) < step + 1:
         step = len(indicators) - 1
     value = round(seconds / math.pow(60, step), 2)
@@ -134,20 +138,22 @@ class BZ2Compressor(Compressor):
 def _parse_args(**comps):
 
     ap = argparse.ArgumentParser(description='Measure compression rate.',
-                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument('--verbose', help='print progress status',
-                    action='count')
+        action='count')
     ap.add_argument('--chunk-size', help="data chunk's size (metric: KB)",
-                    choices=[int(math.pow(2, n)) for n in range(2, 10)],
-                    type=int, default=16)
+        choices=[int(math.pow(2, n)) for n in range(2, 10)],
+        type=int, default=16)
     ap.add_argument('--name', help="compression algorithm's name",
-                    choices=comps.keys(), default='all')
-    ap.add_argument('--level', help='controlling the level of compression, all = -2, default = -1',
-                    type=int, choices=range(-2, 10), default=-2)
+        choices=comps.keys(), default='all')
+    ap.add_argument('--level',
+        help='controlling the level of compression, all = -2, default = -1',
+        type=int, choices=range(-2, 10), default=-2)
     ap.add_argument('file')
     args = ap.parse_args()
 
-    return args.verbose, args.chunk_size * 1024, args.name, args.level, args.file
+    return (args.verbose, args.chunk_size * 1024,
+        args.name, args.level, args.file)
 
 def _main():
 
@@ -155,9 +161,9 @@ def _main():
              'bz2': BZ2Compressor}
     verbose, chunk_size, comp_name, comp_level, input_file = _parse_args(
         all=None, **comps)
-    input_file_size = get_size(input_file)
+    input_fsize = get_size(input_file)
     print('File: {}, Length: {}, Chunk Size: {}'.format(input_file,
-        format_bytes(input_file_size), format_bytes(chunk_size)))
+        format_bytes(input_fsize), format_bytes(chunk_size)))
 
     # =========================
     # MEASURE COMPRESSION RATE
@@ -170,10 +176,11 @@ def _main():
                            remain='REMAIN'))
 
     names = comps.keys() if comp_name == 'all' else [comp_name]
-    for name, lvl in [(n, l) for n in names for l in comps[n].levels(comp_level)]:
+    for name, lvl in [(n, l) for n in names
+            for l in comps[n].levels(comp_level)]:
         comp = comps[name](level=lvl)
         with open(input_file, 'rb') as f:
-            prog = Progress(input_file_size)
+            prog = Progress(input_fsize)
             cur_size = 0
             out_size = 0
             while True:
@@ -188,21 +195,26 @@ def _main():
                 prog.set_pos(cur_size)
                 speed = cur_size / max(prog.expired(), 1)
                 print('\r', formatter.format(name=name, level=lvl,
-                        outsize=format_bytes(out_size), expired=format_seconds(prog.expired()),
-                        rate='?', speed=format_bytes(speed)+'ps', multiple='?',
-                        percent=prog.percent(), remain=format_seconds(prog.remain())),
+                        outsize=format_bytes(out_size),
+                        expired=format_seconds(prog.expired()), rate='?',
+                        speed=format_bytes(speed)+'ps', multiple='?',
+                        percent=prog.percent(),
+                        remain=format_seconds(prog.remain())),
                     sep='', end='')
 
             out_size += len(comp.flush())
 
             prog.set_pos(cur_size)
-            rate = round(((input_file_size - out_size) * 100.0) / input_file_size, 2)
+            rate = round(((input_fsize - out_size)*100.0) / input_fsize, 2)
             speed = cur_size / max(prog.expired(), 1)
-            multiple = round(input_file_size * 1.0 / max(out_size, 1), 2)
+            multiple = round(input_fsize * 1.0 / max(out_size, 1), 2)
             print('\r', formatter.format(name=name, level=lvl,
-                    outsize=format_bytes(out_size), expired=format_seconds(prog.expired()),
-                    rate=rate, speed=format_bytes(speed) + 'ps', multiple=multiple,
-                    percent=prog.percent(), remain=format_seconds(prog.remain())),
+                    outsize=format_bytes(out_size),
+                    expired=format_seconds(prog.expired()),
+                    rate=rate, speed=format_bytes(speed) + 'ps',
+                    multiple=multiple,
+                    percent=prog.percent(),
+                    remain=format_seconds(prog.remain())),
                 sep='')
 
 
