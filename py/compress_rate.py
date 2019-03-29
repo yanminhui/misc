@@ -99,10 +99,10 @@ class ZlibCompressor(Compressor):
 
     def __init__(self, **kwargs):
         super(ZlibCompressor, self).__init__()
-        self._kwargs = kwargs
-
+        self._lvl = self.levels(kwargs.get('level'))[0]
+        
     def compress(self, data):
-        return zlib.compress(data, **self._kwargs)
+        return zlib.compress(data, self._lvl)
 
 class BZ2Compressor(Compressor):
 
