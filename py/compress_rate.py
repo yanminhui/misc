@@ -8,16 +8,26 @@ from __future__ import print_function, unicode_literals
 
 import argparse
 import bz2
+import gzip
 import math
+import io
 import os
+import sys
 import time
 import zlib
 
+if 3 <= sys.version_info.major and 3 <= sys.version_info.minor:
+    import lzma
+
 
 def get_size(filename):
-    # pf = os.popen('lsblk -d -n -o SIZE -b ' + input_file)
-    # g_in_size = int(pf.read().strip())
-    return os.path.getsize(filename)
+    size = os.path.getsize(filename)
+    if size:
+        return size
+    with open(filename, 'rb') as f:
+        f.seek(0, os.SEEK_END)
+        return f.tell()
+    return size
 
 def format_bytes(byte_count):
     indicators = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
@@ -31,7 +41,7 @@ def format_bytes(byte_count):
 def format_seconds(seconds):
     indicators = ('secs', 'mins', 'hour')
     step = 0
-    if seconds:
+    if 1 <= seconds:
         step = int(math.floor(math.log(seconds) / math.log(60)))
     if len(indicators) < step + 1:
         step = len(indicators) - 1
@@ -50,9 +60,15 @@ class Progress(object):
         self._clock_start = time.time()
         self._clock_stop = self._clock_start
 
+    def range(self):
+        return self._rng_first, self._rng_last
+
     def set_pos(self, pos):
         self._pos = pos
         self._clock_stop = time.time()
+
+    def pos(self):
+        return self._pos
 
     def percent(self):
         rng = self._rng_last - self._rng_first
@@ -108,6 +124,27 @@ class ZlibCompressor(Compressor):
     def compress(self, data):
         return zlib.compress(data, self._lvl)
 
+class GzipCompressor(Compressor):
+
+    @classmethod
+    def levels(cls, filter):
+        lvls = range(0, 10)
+        if filter == -2:
+            return lvls
+        elif filter in lvls:
+            return [filter]
+        return [9]  # default
+
+    def __init__(self, **kwargs):
+        super(GzipCompressor, self).__init__()
+        self._lvl = self.levels(kwargs.get('level'))[0]
+
+    def compress(self, data):
+        buf = io.BytesIO()
+        with gzip.GzipFile(fileobj=buf, mode='wb', compresslevel=self._lvl) as f:
+            f.write(data)
+        return buf.getvalue()
+
 class BZ2Compressor(Compressor):
 
     @classmethod
@@ -134,6 +171,23 @@ class BZ2Compressor(Compressor):
         eng = super(BZ2Compressor, self).engine()
         return eng.flush()
 
+class LZMACompressor(Compressor):
+
+    @classmethod
+    def levels(cls, filter):
+        return [0]  # default
+
+    def __init__(self, **kwargs):
+        kwargs.pop('level')
+        super(LZMACompressor, self).__init__(lzma.LZMACompressor(**kwargs))
+
+    def compress(self, data):
+        eng = super(LZMACompressor, self).engine()
+        return eng.compress(data)
+
+    def flush(self):
+        eng = super(LZMACompressor, self).engine()
+        return eng.flush()
 
 def _parse_args(**comps):
 
@@ -155,25 +209,58 @@ def _parse_args(**comps):
     return (args.verbose, args.chunk_size * 1024,
         args.name, args.level, args.file)
 
+def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
+
+    formatter = '{name:5} {level:5} {outsize:10} {expired:10} {rate:5} ' \
+                '{speed:12} {multiple:5} {percent:5} {remain:10}'
+    if name is None:
+        values = dict(name='NAME', level='LEVEL', outsize='OUTSIZE',
+                      expired='EXPIRED', rate='%RATE', speed='SPEED',
+                      multiple='MULTI', percent='%PROG', remain='REMAIN'
+        )
+        return print(formatter.format(**values), **kwargs)
+
+    input_fsize = prog.range()[1]
+    cur_size = prog.pos()
+
+    expired = prog.expired()
+    percent = prog.percent()
+    remain = prog.remain(expired=expired, percent=percent)
+    speed = cur_size / max(expired, 1)
+
+    values = dict(name=name, level=level, outsize=format_bytes(out_size),
+                  expired=format_seconds(expired),
+                  percent=percent,
+                  remain=format_seconds(remain),
+                  speed = format_bytes(speed) + 'ps')
+
+    if cur_size == input_fsize:
+        values['rate'] = round(((input_fsize - out_size) * 100.0) / input_fsize, 2)
+        values['multiple'] = round(input_fsize * 1.0 / max(out_size, 1), 2)
+    else:
+        values['rate'] = '?'
+        values['multiple'] = '?'
+    return print('\r', formatter.format(**values), **kwargs)
+
 def _main():
 
     comps = {'zlib': ZlibCompressor,
+             'gzip': GzipCompressor,
              'bz2': BZ2Compressor}
+    if 3 <= sys.version_info.major and 3 <= sys.version_info.minor:
+        comps['lzma'] = LZMACompressor
+
     verbose, chunk_size, comp_name, comp_level, input_file = _parse_args(
         all=None, **comps)
     input_fsize = get_size(input_file)
+
     print('File: {}, Length: {}, Chunk Size: {}'.format(input_file,
         format_bytes(input_fsize), format_bytes(chunk_size)))
 
     # =========================
     # MEASURE COMPRESSION RATE
     # =========================
-    formatter = '{name:5} {level:5} {outsize:10} {expired:10} {rate:5} ' \
-                '{speed:12} {multiple:5} {percent:5} {remain:10}'
-    print(formatter.format(name='NAME', level='LEVEL', outsize='OUTSIZE',
-                           expired='EXPIRED', rate='%RATE', speed='SPEED',
-                           multiple='MULTI', percent='%PROG',
-                           remain='REMAIN'))
+    _print()
 
     names = comps.keys() if comp_name == 'all' else [comp_name]
     for name, lvl in [(n, l) for n in names
@@ -189,33 +276,14 @@ def _main():
                     break
                 cur_size += len(buffer)
                 out_size += len(comp.compress(buffer))
-
-                if not verbose:
-                    continue
-                prog.set_pos(cur_size)
-                speed = cur_size / max(prog.expired(), 1)
-                print('\r', formatter.format(name=name, level=lvl,
-                        outsize=format_bytes(out_size),
-                        expired=format_seconds(prog.expired()), rate='?',
-                        speed=format_bytes(speed)+'ps', multiple='?',
-                        percent=prog.percent(),
-                        remain=format_seconds(prog.remain())),
-                    sep='', end='')
-
+                
+                if verbose:
+                    prog.set_pos(cur_size)
+                    _print(name, lvl, out_size, prog, sep='', end='')
+            
             out_size += len(comp.flush())
-
             prog.set_pos(cur_size)
-            rate = round(((input_fsize - out_size)*100.0) / input_fsize, 2)
-            speed = cur_size / max(prog.expired(), 1)
-            multiple = round(input_fsize * 1.0 / max(out_size, 1), 2)
-            print('\r', formatter.format(name=name, level=lvl,
-                    outsize=format_bytes(out_size),
-                    expired=format_seconds(prog.expired()),
-                    rate=rate, speed=format_bytes(speed) + 'ps',
-                    multiple=multiple,
-                    percent=prog.percent(),
-                    remain=format_seconds(prog.remain())),
-                sep='')
+            _print(name, lvl, out_size, prog, sep='')
 
 
 if __name__ == '__main__':
