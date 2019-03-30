@@ -29,6 +29,18 @@ def get_size(filename):
         return f.tell()
     return size
 
+def iterate_files(fpath):
+    if not os.path.isdir(fpath):
+        yield fpath
+    for root, dirs, files in os.walk(fpath):
+        for file_ in files:
+            yield os.path.join(root, file_)
+        for dir in dirs:
+            iterate_files(os.path.join(root, dir))
+
+def get_size_recurse(fpath):
+    return sum(map(get_size, iterate_files(fpath)))
+
 def format_bytes(byte_count):
     indicators = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     step = 0
@@ -71,7 +83,7 @@ class Progress(object):
         return self._pos
 
     def percent(self):
-        rng = self._rng_last - self._rng_first
+        rng = max(self._rng_last - self._rng_first, 1)
         return round(((self._pos - self._rng_first) * 100) / rng, 2)
 
     def expired(self):
@@ -141,7 +153,8 @@ class GzipCompressor(Compressor):
 
     def compress(self, data):
         buf = io.BytesIO()
-        with gzip.GzipFile(fileobj=buf, mode='wb', compresslevel=self._lvl) as f:
+        with gzip.GzipFile(fileobj=buf, mode='wb',
+                compresslevel=self._lvl) as f:
             f.write(data)
         return buf.getvalue()
 
@@ -203,7 +216,7 @@ def _parse_args(**comps):
     ap.add_argument('--level',
         help='controlling the level of compression, all = -2, default = -1',
         type=int, choices=range(-2, 10), default=-2)
-    ap.add_argument('file')
+    ap.add_argument('file', help='file or directory')
     args = ap.parse_args()
 
     # fix python2.7 support unicode
@@ -240,12 +253,13 @@ def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
                   speed = format_bytes(speed) + 'ps')
 
     if cur_size == input_fsize:
-        values['rate'] = round(((input_fsize - out_size) * 100.0) / input_fsize, 2)
+        values['rate'] = round(((input_fsize - out_size) * 100.0) /
+                input_fsize, 2)
         values['multiple'] = round(input_fsize * 1.0 / max(out_size, 1), 2)
     else:
         values['rate'] = '?'
         values['multiple'] = '?'
-    return print(formatter.format(**values), **kwargs)
+    return print('\r', formatter.format(**values), **kwargs)
 
 def _main():
 
@@ -257,7 +271,7 @@ def _main():
 
     verbose, chunk_size, comp_name, comp_level, input_file = _parse_args(
         all=None, **comps)
-    input_fsize = get_size(input_file)
+    input_fsize = get_size_recurse(input_file)
 
     print('File: {}, Length: {}, Chunk Size: {}'.format(input_file,
         format_bytes(input_fsize), format_bytes(chunk_size)))
@@ -271,24 +285,24 @@ def _main():
     for name, lvl in [(n, l) for n in names
             for l in comps[n].levels(comp_level)]:
         comp = comps[name](level=lvl)
-        with open(input_file, 'rb') as f:
-            prog = Progress(input_fsize)
-            cur_size = 0
-            out_size = 0
-            while True:
-                buffer = f.read(chunk_size)
-                if not buffer:
-                    break
-                cur_size += len(buffer)
-                out_size += len(comp.compress(buffer))
-                
-                if verbose:
-                    prog.set_pos(cur_size)
-                    _print(name, lvl, out_size, prog, end='\r')
-            
-            out_size += len(comp.flush())
-            prog.set_pos(cur_size)
-            _print(name, lvl, out_size, prog)
+        prog = Progress(input_fsize)
+        cur_size = 0
+        out_size = 0
+        for file_ in iterate_files(input_file):
+            with open(file_, 'rb') as f:
+                while True:
+                    buffer = f.read(chunk_size)
+                    if not buffer:
+                        break
+                    cur_size += len(buffer)
+                    out_size += len(comp.compress(buffer))
+
+                    if verbose:
+                        prog.set_pos(cur_size)
+                        _print(name, lvl, out_size, prog, end='')
+        out_size += len(comp.flush())
+        prog.set_pos(cur_size)
+        _print(name, lvl, out_size, prog)
 
 
 if __name__ == '__main__':
