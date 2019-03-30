@@ -206,8 +206,13 @@ def _parse_args(**comps):
     ap.add_argument('file')
     args = ap.parse_args()
 
+    # fix python2.7 support unicode
+    input_file = args.file
+    if not isinstance(args.file, type(u'')):
+        input_file = args.file.decode('utf-8')
+
     return (args.verbose, args.chunk_size * 1024,
-        args.name, args.level, args.file)
+        args.name, args.level, input_file)
 
 def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
 
@@ -240,7 +245,7 @@ def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
     else:
         values['rate'] = '?'
         values['multiple'] = '?'
-    return print('\r', formatter.format(**values), **kwargs)
+    return print(formatter.format(**values), **kwargs)
 
 def _main():
 
@@ -279,11 +284,11 @@ def _main():
                 
                 if verbose:
                     prog.set_pos(cur_size)
-                    _print(name, lvl, out_size, prog, sep='', end='')
+                    _print(name, lvl, out_size, prog, end='\r')
             
             out_size += len(comp.flush())
             prog.set_pos(cur_size)
-            _print(name, lvl, out_size, prog, sep='')
+            _print(name, lvl, out_size, prog)
 
 
 if __name__ == '__main__':
