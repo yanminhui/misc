@@ -37,7 +37,9 @@ def iterate_files(fpath):
         yield fpath
     for root, dirs, files in os.walk(fpath):
         for file_ in files:
-            yield os.path.join(root, file_)
+            f = os.path.join(root, file_)
+            if get_size(f):
+                yield f
         for dir in dirs:
             iterate_files(os.path.join(root, dir))
 
@@ -45,7 +47,7 @@ def get_size_recurse(fpath):
     return sum(map(get_size, iterate_files(fpath)))
 
 def format_bytes(byte_count):
-    indicators = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
+    indicators = ('By', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     step = 0
     if byte_count:
         step = int(math.floor(math.log(byte_count) / math.log(1024)))
@@ -54,7 +56,7 @@ def format_bytes(byte_count):
     return '{} {}'.format(value, indicator)
 
 def format_seconds(seconds):
-    indicators = ('secs', 'mins', 'hour')
+    indicators = ('s', 'm', 'h')
     step = 0
     if 1 <= seconds:
         step = int(math.floor(math.log(seconds) / math.log(60)))
@@ -232,12 +234,14 @@ def _parse_args(**comps):
 
 def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
 
-    formatter = '{name:5} {level:5} {outsize:10} {expired:10} {savings:8} ' \
-                '{speed:12} {ratio:5} {progress:5} {remain:10}'
+    formatter = '{name:4} {level:3} {outsize:9} {expired:7} ' \
+        '{savings:5} {in_speed:11} {out_speed:11} {ratio:5} '\
+        '{progress:5} {remain:7}'
     if name is None:
-        values = dict(name='NAME', level='LEVEL', outsize='OUTSIZE',
-                      expired='EXPIRED', savings='%SAVINGS', speed='SPEED',
-                      ratio='RATIO', progress='%PROG', remain='REMAIN'
+        values = dict(name='NAME', level='LVL', outsize='OUTSIZE',
+            expired='EXPIRED', savings='%SAV', in_speed='IN/ps',
+            out_speed='OUT/ps', ratio='RATIO', progress='%PROG',
+            remain='REMAIN'
         )
         return print(formatter.format(**values), **kwargs)
 
@@ -247,22 +251,24 @@ def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
     expired = prog.expired()
     percent = prog.percent()
     remain = prog.remain(expired=expired, percent=percent)
-    speed = cur_size / max(expired, 1)
+    in_speed = cur_size / max(expired, 1)
+    out_speed = out_size / max(expired, 1)
 
     values = dict(name=name, level=level, outsize=format_bytes(out_size),
                   expired=format_seconds(expired),
                   progress=percent,
                   remain=format_seconds(remain),
-                  speed = format_bytes(speed) + 'ps')
+                  in_speed=format_bytes(in_speed)+'ps',
+                  out_speed=format_bytes(out_speed)+'ps')
 
-    if cur_size == input_fsize:
+    if input_fsize <= cur_size + 1024:
         values['savings'] = round(((input_fsize - out_size) * 100.0) /
                 input_fsize, 2)
         values['ratio'] = round(input_fsize * 1.0 / max(out_size, 1), 2)
     else:
         values['savings'] = '?'
         values['ratio'] = '?'
-    return print('\r', formatter.format(**values), **kwargs)
+    return print(formatter.format(**values), '\r', **kwargs)
 
 def _main():
 
