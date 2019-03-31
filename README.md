@@ -78,7 +78,7 @@ format_bytes(s, 18446640
 
 Measure compression ratio. `zlib`, `gzip`, `bz2`, `lzma` is supported.
 
-**Useage**
+**Usage**
 
 ```bash
 usage: mcr.py [-h] [--verbose] [--chunk-size {4,8,16,32,64,128,256,512}]
