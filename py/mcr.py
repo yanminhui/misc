@@ -24,9 +24,12 @@ def get_size(filename):
     size = os.path.getsize(filename)
     if size:
         return size
-    with open(filename, 'rb') as f:
-        f.seek(0, os.SEEK_END)
-        return f.tell()
+    try:
+        with open(filename, 'rb') as f:
+            f.seek(0, os.SEEK_END)
+            return f.tell()
+    except (OSError, IOError):
+        pass
     return size
 
 def iterate_files(fpath):
