@@ -204,7 +204,7 @@ class LZMACompressor(Compressor):
 
 def _parse_args(**comps):
 
-    ap = argparse.ArgumentParser(description='Measure compression rate.',
+    ap = argparse.ArgumentParser(description='Measure compression ratio.',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument('--verbose', help='print progress status',
         action='count')
@@ -229,12 +229,12 @@ def _parse_args(**comps):
 
 def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
 
-    formatter = '{name:5} {level:5} {outsize:10} {expired:10} {rate:5} ' \
-                '{speed:12} {multiple:5} {percent:5} {remain:10}'
+    formatter = '{name:5} {level:5} {outsize:10} {expired:10} {savings:8} ' \
+                '{speed:12} {ratio:5} {progress:5} {remain:10}'
     if name is None:
         values = dict(name='NAME', level='LEVEL', outsize='OUTSIZE',
-                      expired='EXPIRED', rate='%RATE', speed='SPEED',
-                      multiple='MULTI', percent='%PROG', remain='REMAIN'
+                      expired='EXPIRED', savings='%SAVINGS', speed='SPEED',
+                      ratio='RATIO', progress='%PROG', remain='REMAIN'
         )
         return print(formatter.format(**values), **kwargs)
 
@@ -248,17 +248,17 @@ def _print(name=None, level=None, out_size=None, prog=None, **kwargs):
 
     values = dict(name=name, level=level, outsize=format_bytes(out_size),
                   expired=format_seconds(expired),
-                  percent=percent,
+                  progress=percent,
                   remain=format_seconds(remain),
                   speed = format_bytes(speed) + 'ps')
 
     if cur_size == input_fsize:
-        values['rate'] = round(((input_fsize - out_size) * 100.0) /
+        values['savings'] = round(((input_fsize - out_size) * 100.0) /
                 input_fsize, 2)
-        values['multiple'] = round(input_fsize * 1.0 / max(out_size, 1), 2)
+        values['ratio'] = round(input_fsize * 1.0 / max(out_size, 1), 2)
     else:
-        values['rate'] = '?'
-        values['multiple'] = '?'
+        values['savings'] = '?'
+        values['ratio'] = '?'
     return print('\r', formatter.format(**values), **kwargs)
 
 def _main():

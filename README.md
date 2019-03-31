@@ -74,20 +74,19 @@ format_bytes(s, 18446640
 
 ## Python2/3
 
-### [compress rate](https://github.com/yanminhui/misc/blob/master/py/compress_rate.py)
+### [mcr](https://github.com/yanminhui/misc/blob/master/py/mcr.py)
 
-Measure compression rate. `zlib`, `gzip`, `bz2`, `lzma` is supported.
+Measure compression ratio. `zlib`, `gzip`, `bz2`, `lzma` is supported.
 
 **Useage**
 
 ```bash
-usage: compress_rate.py [-h] [--verbose]
-                        [--chunk-size {4,8,16,32,64,128,256,512}]
-                        [--name {all,zlib,gzip,bz2,lzma}]
-                        [--level {-2,-1,0,1,2,3,4,5,6,7,8,9}]
-                        file
+usage: mcr.py [-h] [--verbose] [--chunk-size {4,8,16,32,64,128,256,512}]
+              [--name {gzip,all,zlib,bz2}]
+              [--level {-2,-1,0,1,2,3,4,5,6,7,8,9}]
+              file
 
-Measure compression rate.
+Measure compression ratio.
 
 positional arguments:
   file                  file or directory
@@ -97,7 +96,7 @@ optional arguments:
   --verbose             print progress status (default: None)
   --chunk-size {4,8,16,32,64,128,256,512}
                         data chunk's size (metric: KB) (default: 16)
-  --name {all,zlib,gzip,bz2,lzma}
+  --name {gzip,all,zlib,bz2}
                         compression algorithm's name (default: all)
   --level {-2,-1,0,1,2,3,4,5,6,7,8,9}
                         controlling the level of compression, all = -2,
@@ -107,13 +106,13 @@ optional arguments:
 **Example**
 
 ```bash
-$ python3 compress_rate.py --level=-1 --verbose /usr/local
-File: /usr/local/, Length: 525.48 MB, Chunk Size: 16.0 KB
-NAME  LEVEL OUTSIZE    EXPIRED    %RATE SPEED        MULTI %PROG REMAIN
- zlib     -1 170.54 MB  42.71 secs 67.55 12.3 MBps     3.08 100.0 0.0 secs
- gzip      9 170.93 MB  57.98 secs 67.47 9.06 MBps     3.07 100.0 0.0 secs
- bz2       9 132.79 MB  1.32 mins  74.73 6.65 MBps     3.96 100.0 0.0 secs
- lzma      0 101.92 MB  8.07 mins   80.6 1.09 MBps     5.16 100.0 0.0 secs
+$ python3 mcr.py --verbose --level=-1 /usr/local
+File: /usr/local, Length: 525.48 MB, Chunk Size: 16.0 KB
+NAME  LEVEL OUTSIZE    EXPIRED    %SAVINGS SPEED        RATIO %PROG REMAIN
+ zlib     -1 170.54 MB  42.71 secs   67.55 12.3 MBps     3.08 100.0 0.0 secs
+ gzip      9 170.93 MB  57.98 secs   67.47 9.06 MBps     3.07 100.0 0.0 secs
+ bz2       9 132.79 MB  1.32 mins    74.73 6.65 MBps     3.96 100.0 0.0 secs
+ lzma      0 101.92 MB  8.07 mins     80.6 1.09 MBps     5.16 100.0 0.0 secs
 ```
 
 ## ECMAScript5/6
