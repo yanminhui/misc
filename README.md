@@ -106,6 +106,7 @@ optional arguments:
 **Example**
 
 ```bash
+$ python3 mcr.py --level=-1 /dev/vda
 File: /dev/vda, Length: 40.0 GB, Chunk Size: 16.0 KB
 NAME LVL OUTSIZE   EXPIRED %SAV  IN/ps       OUT/ps      RATIO %PROG REMAIN 
 bz2    9 6.61 GB   1.1 h   83.48 10.33 MBps  1.71 MBps    6.05 100.0 0.0 s
