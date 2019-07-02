@@ -72,6 +72,65 @@ format_bytes(s, 18446640
 17.60 MB
 ```
 
+### [error_t](https://github.com/yanminhui/misc/blob/master/cpp/error.hpp)
+
+ Save std::error_code, boost.system, GetLastError(), user custom error code 
+ and error message to class [w]error_t.
+ 
+ Query error information by dump() or dump_backtrace() from class [w]error_t,
+ it can query error domain, value, message by the numbers of [w]error_t.
+ 
+ **Function Prototype**
+ 
+(1) User Custom Error
+
+```.cpp
+SET_ERROR_CUSTOM[W](error_t&, domain, value, format_string, ...);
+SET_ERROR_MESSAGE[W](error_t&, value, format_string, ...);
+SET_ERROR_STRING[W](error_t&, format_string, ...);
+```
+
+(2) std::error_code or boost.system
+
+```.cpp
+SET_ERROR_CODE[W](error_t&, error_code);
+MAKE_ERROR_CODE[W](error_t&, errc_t);
+```
+
+(3) System Error
+
+```.cpp
+SET_SYSTEM_ERROR[W](error_t&, ::GetLastError());  // errno
+```
+
+(4) Print Error Message to Stream
+
+```.cpp
+void error_t::dump(std::basic_ostream<charT>&);
+void error_t::dump_backtrace(std::basic_ostream<charT>&);
+```
+
+**Usage**
+
+```.cpp
+using namespace ymh;
+
+error_t err;
+SET_ERROR_STRING(err, "Open file %s failed", "error.log");
+
+if (err)  // return true if error occur
+{
+  SET_SYSTEM_ERROR(err, ::GetLastError());
+}
+```
+
+**Output**
+
+```.sh
+File "xxx.cpp", line ?, in <function>: Open file error.log failed
+File "xxx.cpp", line ?, in <function>: Success
+```
+
 ## Python2/3
 
 ### [mcr](https://github.com/yanminhui/misc/blob/master/py/mcr.py)
