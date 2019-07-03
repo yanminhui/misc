@@ -611,6 +611,11 @@ public:
             ? std::error_code().message() : errvals_.front().message();
     }
 
+    void clear()
+    {
+        errvals_.clear();
+    }
+
 public:
     void dump(std::basic_ostream<char_type>& ostrm) const
     {
