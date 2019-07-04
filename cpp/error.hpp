@@ -60,6 +60,7 @@
 #include <limits>
 #include <locale>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -456,7 +457,7 @@ public:
     }
 
 public:
-    void dump(std::basic_ostream<char_type>& ostrm) const
+    void dump(std::basic_ostream<char_type>& ostrm, bool printfl=true) const
     {
         auto conv = [](std::string const& from) -> string_t
         {
@@ -465,43 +466,48 @@ public:
             return to;
         };
     
-        /*
-        namespace fs = std::experimental::filesystem;
+        if (printfl)
+        {
+            /*
+            namespace fs = std::experimental::filesystem;
 
-        fs::path file(file_);
-        fs::path file_cp;
-        auto const n = std::distance(file.begin(), file.end());
-        auto it = file.begin();
-        if (1 < n)
-        {
-            std::advance(it, n - 2);
-            file_cp /= *it++;
-        }
-        if (0 < n)
-        {
-            file_cp /= *it++;
-        }
-        */
-    
-        string_t file_cp = file_;
-        auto sep = ostrm.widen('/');
-        auto r1st_sep = file_.find_last_of(sep);
-        if (r1st_sep == string_t::npos)
-        {
-            sep = ostrm.widen('\\');
-            r1st_sep = file_.find_last_of(sep);
-        }
-        if (r1st_sep != string_t::npos)
-        {
-            auto const r2nd_sep = file_.find_last_of(sep, r1st_sep - 1);
-            if (r2nd_sep != string_t::npos)
+            fs::path file(file_);
+            fs::path file_cp;
+            auto const n = std::distance(file.begin(), file.end());
+            auto it = file.begin();
+            if (1 < n)
             {
-                file_cp = file_.substr(r2nd_sep + 1);
+                std::advance(it, n - 2);
+                file_cp /= *it++;
             }
+            if (0 < n)
+            {
+                file_cp /= *it++;
+            }
+            */
+        
+            string_t file_cp = file_;
+            auto sep = ostrm.widen('/');
+            auto r1st_sep = file_.find_last_of(sep);
+            if (r1st_sep == string_t::npos)
+            {
+                sep = ostrm.widen('\\');
+                r1st_sep = file_.find_last_of(sep);
+            }
+            if (r1st_sep != string_t::npos)
+            {
+                auto const r2nd_sep = file_.find_last_of(sep, r1st_sep - 1);
+                if (r2nd_sep != string_t::npos)
+                {
+                    file_cp = file_.substr(r2nd_sep + 1);
+                }
+            }
+            
+            ostrm << conv("File \"") << file_cp 
+                << conv("\", line ") << line_ << conv(", in ");
         }
         
-        ostrm << conv("File \"") << file_cp << conv("\", line ") << line_ 
-            << conv(", in ") << func_ << conv(": ") << msg_;
+        ostrm << func_ << conv(": ") << msg_;
         if (msg_.empty() || msg_.back() != '\n' || msg_.back() != L'\n')
         {
             ostrm << std::endl;
@@ -617,29 +623,63 @@ public:
     }
 
 public:
-    void dump(std::basic_ostream<char_type>& ostrm) const
+    void dump(std::basic_ostream<char_type>& ostrm, bool printfl=true) const
     {
         if (errvals_.empty())
         {
             errval_t ev;
-            ev.dump(ostrm);
+            ev.dump(ostrm, printfl);
         }
-        errvals_.front().dump(ostrm);
+        errvals_.front().dump(ostrm, printfl);
     }
     
-    void dump_backtrace(std::basic_ostream<char_type>& ostrm) const
+    string_t dump(bool printfl=true) const
+    {
+        std::basic_ostringstream<char_type> ostrm;
+        dump(ostrm, printfl);
+        return ostrm.str();
+    }
+    
+    void dump_backtrace(std::basic_ostream<char_type>& ostrm, bool printfl=true) const
     {
         if (errvals_.empty())
         {
-            errval_t ev;
-            ev.dump(ostrm);
+            dump(ostrm, printfl);
         }
         for (auto const& ev : errvals_)
         {
-            ev.dump(ostrm);
+            ev.dump(ostrm, printfl);
         }
     }
     
+    string_t dump_backtrace(bool printfl=true) const
+    {
+        std::basic_ostringstream<char_type> ostrm;
+        dump_backtrace(ostrm, printfl);
+        return ostrm.str();
+    }
+   
+public:
+    void dump_nofl(std::basic_ostream<char_type>& ostrm) const
+    {
+        dump(ostrm, false);
+    }
+
+    string_t dump_nofl() const
+    {
+        return dump(false);
+    }
+
+    void dump_backtrace_nofl(std::basic_ostream<char_type>& ostrm) const
+    {
+        dump_backtrace(ostrm, false);
+    }
+
+    string_t dump_backtrace_nofl() const
+    {
+        return dump_backtrace(false);
+    }
+
 public:
     template <class... Args>
     void set_error_custom2(string_t const& file, int line, string_t const& func
