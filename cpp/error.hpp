@@ -136,7 +136,7 @@
 #if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
 #   define ERROR_CATCH(err) \
         ERROR_CATCH_BOOST_SYSTEM(err) \
-    ERROR_CATCH_STD_SYSTEM(err) \
+        ERROR_CATCH_STD_SYSTEM(err) \
         ERROR_CATCH_STD_EXCEPTION(err) \
         ERROR_CATCH_UNWIND(err)
 #else
@@ -197,7 +197,7 @@
 #if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
 #   define ERROR_CATCHW(errW) \
         ERROR_CATCH_BOOST_SYSTEMW(errW) \
-    ERROR_CATCH_STD_SYSTEMW(errW) \
+        ERROR_CATCH_STD_SYSTEMW(errW) \
         ERROR_CATCH_STD_EXCEPTIONW(errW) \
         ERROR_CATCH_UNWINDW(errW)
 #else
