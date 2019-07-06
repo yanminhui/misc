@@ -29,7 +29,13 @@
  *   
  *    SET_SYSTEM_ERROR[W](error_t&, ::GetLastError());  // errno
  *
- * (4) Print Error Message to Stream
+ * (4) Catch Exception
+ *
+ *    ERROR_TRY[W] {
+ *      // throw exception
+ *    } ERROR_CATCH[W](error_t&)
+ *
+ * (5) Print Error Message to Stream
  *
  *    void error_t::dump(std::basic_ostream<charT>&);
  *    void error_t::dump_backtrace(std::basic_ostream<charT>&);
@@ -61,6 +67,7 @@
 #include <locale>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -80,8 +87,8 @@
     do { err.set_error_custom2(__FILE__, __LINE__, __FUNCTION__ \
         , domain, val, fmt, ##__VA_ARGS__); } while (0)
 
- /* User custom error message, except domain
-  */
+/* User custom error message, except domain
+ */
 #define SET_ERROR_MESSAGE(err, val, fmt, ...) \
     do { err.set_error_message2(__FILE__, __LINE__, __FUNCTION__ \
         , val, fmt, ##__VA_ARGS__); } while (0)
@@ -90,42 +97,115 @@
     do { err.set_error_string2(__FILE__, __LINE__, __FUNCTION__\
          , fmt, ##__VA_ARGS__); } while (0)
 
- /* std::error_code or boost.system
-  */
+/* std::error_code or boost.system
+ */
 #define SET_ERROR_CODE(err, ec) \
     do { err.set_error_code2(__FILE__, __LINE__, __FUNCTION__, ec); } while (0)
 
 #define MAKE_ERROR_CODE(err, e) \
     do { err.make_error_code2(__FILE__, __LINE__, __FUNCTION__, e); } while (0)
 
- /* GetLastError()
-  */
+/* GetLastError()
+ */
 #define SET_SYSTEM_ERROR(err, val) \
     do { err.set_system_error2(__FILE__, __LINE__, __FUNCTION__, val); } while (0)
+
+/* std::exception
+ */
+#define ERROR_TRY try
+
+#define ERROR_CATCH_BOOST_SYSTEM(err) \
+    catch (boost::system::system_error const& _error) { \
+        SET_ERROR_CUSTOM(err \
+            , _error.code().category().name() \
+            , _error.code().value(), _error.what()); } 
+
+#define ERROR_CATCH_STD_SYSTEM(err) \
+    catch (std::system_error const& _error) { \
+        SET_ERROR_CUSTOM(err \
+            , _error.code().category().name() \
+            , _error.code().value(), _error.what()); }
+
+#define ERROR_CATCH_STD_EXCEPTION(err) \
+    catch (std::exception const& _error) { \
+        SET_ERROR_STRING(err, _error.what()); }
+
+#define ERROR_CATCH_UNWIND(err) \
+    catch (...) { SET_ERROR_STRING(err, "Unknown exception"); }
+
+#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#   define ERROR_CATCH(err) \
+        ERROR_CATCH_BOOST_SYSTEM(err) \
+    ERROR_CATCH_STD_SYSTEM(err) \
+        ERROR_CATCH_STD_EXCEPTION(err) \
+        ERROR_CATCH_UNWIND(err)
+#else
+#   define ERROR_CATCH(err) \
+        ERROR_CATCH_STD_SYSTEM(err) \
+        ERROR_CATCH_STD_EXCEPTION(err) \
+        ERROR_CATCH_UNWIND(err)
+#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
 
 //
 // Wide String Supported.
 //
-#define SET_ERROR_CUSTOMW(err, domain, val, fmt, ...) \
-    do { err.set_error_custom2(__FILEW__, __LINE__, __FUNCTIONW__ \
+#define __FILE__W ymh::err::detail::a2w(__FILE__)
+#define __FUNCTION__W ymh::err::detail::a2w(__FUNCTION__)
+
+#define SET_ERROR_CUSTOMW(errW, domain, val, fmt, ...) \
+    do { errW.set_error_custom2(__FILE__W, __LINE__, __FUNCTION__W \
         , domain, val, fmt, ##__VA_ARGS__); } while (0)
 
-#define SET_ERROR_MESSAGEW(err, val, fmt, ...) \
-    do { err.set_error_message2(__FILEW__, __LINE__, __FUNCTIONW__ \
+#define SET_ERROR_MESSAGEW(errW, val, fmt, ...) \
+    do { errW.set_error_message2(__FILE__W, __LINE__, __FUNCTION__W \
         , val, fmt, ##__VA_ARGS__); } while (0)
 
-#define SET_ERROR_STRINGW(err, fmt, ...) \
-    do { err.set_error_string2(__FILEW__, __LINE__, __FUNCTIONW__ \
+#define SET_ERROR_STRINGW(errW, fmt, ...) \
+    do { errW.set_error_string2(__FILE__W, __LINE__, __FUNCTION__W \
         , fmt, ##__VA_ARGS__); } while (0)
 
-#define SET_ERROR_CODEW(err, ec) \
-    do { err.set_error_code2(__FILEW__, __LINE__, __FUNCTIONW__, ec); } while (0)
+#define SET_ERROR_CODEW(errW, ec) \
+    do { errW.set_error_code2(__FILE__W, __LINE__, __FUNCTION__W, ec); } while (0)
 
-#define MAKE_ERROR_CODEW(err, e) \
-    do { err.make_error_code2(__FILEW__, __LINE__, __FUNCTIONW__, e); } while (0)
+#define MAKE_ERROR_CODEW(errW, e) \
+    do { errW.make_error_code2(__FILE__W, __LINE__, __FUNCTION__W, e); } while (0)
 
-#define SET_SYSTEM_ERRORW(err, val) \
-    do { err.set_system_error2(__FILEW__, __LINE__, __FUNCTIONW__, val); } while (0)
+#define SET_SYSTEM_ERRORW(errW, val) \
+    do { errW.set_system_error2(__FILE__W, __LINE__, __FUNCTION__W, val); } while (0)
+
+#define ERROR_TRYW try
+
+#define ERROR_CATCH_BOOST_SYSTEMW(errW) \
+    catch (boost::system::system_error const& _error) { \
+        SET_ERROR_CUSTOMW(errW \
+            , ymh::err::detail::a2w(_error.code().category().name()) \
+            , _error.code().value(), ymh::err::detail::a2w(_error.what())); }
+
+#define ERROR_CATCH_STD_SYSTEMW(errW) \
+    catch (std::system_error const& _error) { \
+        SET_ERROR_CUSTOMW(errW \
+            , ymh::err::detail::a2w(_error.code().category().name()) \
+            , _error.code().value(), ymh::err::detail::a2w(_error.what())); }
+
+#define ERROR_CATCH_STD_EXCEPTIONW(errW) \
+    catch (std::exception const& _error) { \
+        SET_ERROR_STRINGW(errW, ymh::err::detail::a2w(_error.what())); } 
+
+#define ERROR_CATCH_UNWINDW(errW) \
+    catch (...) { SET_ERROR_STRINGW(errW, L"Unknown exception"); } 
+
+#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#   define ERROR_CATCHW(errW) \
+        ERROR_CATCH_BOOST_SYSTEMW(errW) \
+    ERROR_CATCH_STD_SYSTEMW(errW) \
+        ERROR_CATCH_STD_EXCEPTIONW(errW) \
+        ERROR_CATCH_UNWINDW(errW)
+#else
+#   define ERROR_CATCHW(errW) \
+        ERROR_CATCH_STD_SYSTEMW(errW) \
+        ERROR_CATCH_STD_EXCEPTIONW(errW) \
+        ERROR_CATCH_UNWINDW(errW)
+#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
 
 
 namespace ymh
@@ -745,7 +825,15 @@ public:
     }
     
 private:
-    template <class... Args>
+    template <class... Args
+            , typename std::enable_if<!sizeof...(Args), int>::type = 0>
+    string_t format(string_t const& fmt, Args&&... args) const
+    {
+        return fmt;
+    }
+
+    template <class... Args
+            , typename std::enable_if<sizeof...(Args), int>::type = 0>
     string_t format(string_t const& fmt, Args&&... args) const
     {
         string_t s;

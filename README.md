@@ -103,7 +103,15 @@ MAKE_ERROR_CODE[W](error_t&, errc_t);
 SET_SYSTEM_ERROR[W](error_t&, ::GetLastError());  // errno
 ```
 
-(4) Print Error Message to Stream
+(4) Catch Exception
+
+```.cpp
+ERROR_TRY[W] {
+  // throw exception
+} ERROR_CATCH[W](error_t&)
+```
+
+(5) Print Error Message to Stream
 
 ```.cpp
 void error_t::dump(std::basic_ostream<charT>&);
