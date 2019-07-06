@@ -825,15 +825,12 @@ public:
     }
     
 private:
-    template <class... Args
-            , typename std::enable_if<!sizeof...(Args), int>::type = 0>
-    string_t format(string_t const& fmt, Args&&... args) const
+    string_t format(string_t const& fmt) const
     {
         return fmt;
     }
 
-    template <class... Args
-            , typename std::enable_if<sizeof...(Args), int>::type = 0>
+    template <class... Args>
     string_t format(string_t const& fmt, Args&&... args) const
     {
         string_t s;
