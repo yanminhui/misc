@@ -81,6 +81,14 @@
 #endif
 */
 
+#if defined(BOOST_SYSTEM_ERROR_CODE_HPP) && !defined(YMH_ERR_WITH_BOOST_SYSTEM)
+#   define YMH_ERR_WITH_BOOST_SYSTEM 1
+#endif  // BOOST_SYSTEM_ERROR_CODE_HPP && !YMH_ERR_WITH_BOOST_SYSTEM
+
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
+#   include <boost/system/error_code.hpp>
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
+
 /* User custom error message
  */
 #define SET_ERROR_CUSTOM(err, domain, val, fmt, ...) \
@@ -133,7 +141,7 @@
 #define ERROR_CATCH_UNWIND(err) \
     catch (...) { SET_ERROR_STRING(err, "Unknown exception"); }
 
-#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
 #   define ERROR_CATCH(err) \
         ERROR_CATCH_BOOST_SYSTEM(err) \
         ERROR_CATCH_STD_SYSTEM(err) \
@@ -144,7 +152,7 @@
         ERROR_CATCH_STD_SYSTEM(err) \
         ERROR_CATCH_STD_EXCEPTION(err) \
         ERROR_CATCH_UNWIND(err)
-#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
 
 //
 // Wide String Supported.
@@ -194,7 +202,7 @@
 #define ERROR_CATCH_UNWINDW(errW) \
     catch (...) { SET_ERROR_STRINGW(errW, L"Unknown exception"); } 
 
-#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
 #   define ERROR_CATCHW(errW) \
         ERROR_CATCH_BOOST_SYSTEMW(errW) \
         ERROR_CATCH_STD_SYSTEMW(errW) \
@@ -205,7 +213,7 @@
         ERROR_CATCH_STD_SYSTEMW(errW) \
         ERROR_CATCH_STD_EXCEPTIONW(errW) \
         ERROR_CATCH_UNWINDW(errW)
-#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
 
 
 namespace ymh
@@ -496,7 +504,7 @@ public:
         ansi_constructor<char_type>::construct(msg_, ec.message());
     }
 
-#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
 
     basic_errval(string_t const& file, int line, string_t const& func
         , boost::system::error_code const& ec)
@@ -516,7 +524,7 @@ public:
         ansi_constructor<char_type>::construct(msg_, ec.message());
     }
 
-#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
 
     basic_errval() : basic_errval(std::error_code())
     {}
@@ -652,7 +660,7 @@ public:
         set_error_code(ec);
     }
 
-#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
 
     void set_error_code(boost::system::error_code const& ec)
     {
@@ -665,7 +673,7 @@ public:
         set_error_code(ec);
     }
 
-#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
 
     void set_system_error(int val)
     {
@@ -800,7 +808,7 @@ public:
         set_error_code2(file, line, func, ec);
     }
     
-#if defined(BOOST_SYSTEM_ERROR_CODE_HPP)
+#if defined(YMH_ERR_WITH_BOOST_SYSTEM)
 
     void set_error_code2(string_t const& file, int line, string_t const& func
         , boost::system::error_code const& ec)
@@ -815,7 +823,7 @@ public:
         set_error_code2(file, line, func, ec);
     }
 
-#endif  // BOOST_SYSTEM_ERROR_CODE_HPP
+#endif  // YMH_ERR_WITH_BOOST_SYSTEM
 
     void set_system_error2(string_t const& file, int line, string_t const& func
         , int val)
