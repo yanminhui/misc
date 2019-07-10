@@ -21,7 +21,7 @@ int main()
     catch (std::exception const& e)
     {
         puts("Error: ");
-            puts(e.what());
+        puts(e.what());
         return 1;
     }
     return 0;
