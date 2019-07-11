@@ -61,6 +61,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <string>
@@ -213,9 +214,12 @@ typedef std::unique_ptr<wchar_t[], default_del<wchar_t> > wchar_ptr;
 namespace detail
 {
 
-template <class AllocatorEn, class AllocatorDe>
 class codec_impl
 {
+public:
+    typedef std::function<char* (int)> alloc4en_t;
+    typedef std::function<wchar_t* (int)> alloc4de_t;
+
 public:
     codec_impl(codepage::type cp, bom::type bo) : cp_(cp), bom_(bo) 
     {}
@@ -225,11 +229,11 @@ public:
     
     static std::shared_ptr<codec_impl> create_instance(codepage::type cp, bom::type bo);
     
-    virtual void encode_impl(wchar_t const* wstr, int in_size
-        , int& out_size, AllocatorEn allocator) const = 0;
+    virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
+        , alloc4en_t const& allocator) const = 0;
 
-    virtual void decode_impl(char const* bytes, int in_size
-        , int& out_size, AllocatorDe allocator) const = 0;
+    virtual void decode_impl(char const* bytes, int in_size, int& out_size
+        , alloc4de_t const& allocator) const = 0;
     
 protected:    
     std::pair<int, unsigned char const*> get_bom() const
@@ -434,18 +438,18 @@ private:
     // allocator: char* allocator(int size);
     template <class AllocatorT>
     void encode_impl(wchar_t const* wstr, int in_size
-        , int& out_size, AllocatorT allocator) const
+        , int& out_size, AllocatorT const& allocator) const
     {
-       auto ci = detail::codec_impl<AllocatorT, wchar_t*(int)>::create_instance(cp_, bom_);
+       auto ci = detail::codec_impl::create_instance(cp_, bom_);
        return ci->encode_impl(wstr, in_size, out_size, allocator);
     }
 
     // allocator: wchar_t* allocator(int size);
     template <class AllocatorT>
     void decode_impl(char const* bytes, int in_size
-        , int& out_size, AllocatorT allocator) const
+        , int& out_size, AllocatorT const& allocator) const
     {
-        auto ci = detail::codec_impl<char*(int), AllocatorT>::create_instance(cp_, bom_);
+        auto ci = detail::codec_impl::create_instance(cp_, bom_);
         return ci->decode_impl(bytes, in_size, out_size, allocator);
     }
     
@@ -642,16 +646,15 @@ inline int MultiByteToWideChar(codepage::type cp
 //
 // Windows Codec Implement.
 //
-template <class AllocatorEn, class AllocatorDe>
-class win_impl : public codec_impl<AllocatorEn, AllocatorDe>
+class win_impl : public codec_impl
 {
 public:
     win_impl(codepage::type cp, bom::type bo)
-        : codec_impl<AllocatorEn, AllocatorDe>(cp, bo)
+        : codec_impl(cp, bo)
     {}
     
-    virtual void encode_impl(wchar_t const* wstr, int in_size
-        , int& out_size, AllocatorEn allocator) const
+    virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
+        , codec_impl::alloc4en_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -699,8 +702,8 @@ public:
         }    
     }
     
-    virtual void decode_impl(char const* bytes, int in_size
-        , int& out_size, AllocatorDe allocator) const
+    virtual void decode_impl(char const* bytes, int in_size, int& out_size
+        , codec_impl::alloc4de_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -797,16 +800,15 @@ inline std::string to_iconv_codepage(codepage::type cp)
     return "";
 }
 
-template <class AllocatorEn, class AllocatorDe>
-class iconv_impl : public codec_impl<AllocatorEn, AllocatorDe>
+class iconv_impl : public codec_impl
 {
 public:
     iconv_impl(codepage::type cp, bom::type bo)
-        : codec_impl<AllocatorEn, AllocatorDe>(cp, bo)
+        : codec_impl(cp, bo)
     {}
 
-    virtual void encode_impl(wchar_t const* wstr, int in_size
-        , int& out_size, AllocatorEn allocator) const
+    virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
+        , codec_impl::alloc4en_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -943,8 +945,8 @@ public:
         }    
     }
 
-    virtual void decode_impl(char const* bytes, int in_size
-        , int& out_size, AllocatorDe allocator) const
+    virtual void decode_impl(char const* bytes, int in_size, int& out_size
+        , codec_impl::alloc4de_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -1086,14 +1088,12 @@ public:
 namespace detail
 {
  
-template <class AllocatorEn, class AllocatorDe>
-std::shared_ptr<codec_impl<AllocatorEn, AllocatorDe>> 
-codec_impl<AllocatorEn, AllocatorDe>::create_instance(codepage::type cp, bom::type bo)
+std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp, bom::type bo)
 {
 #if defined(_WIN32) || defined(_MSC_VER)
-    typedef win_impl<AllocatorEn, AllocatorDe> codec_type;
+    typedef win_impl codec_type;
 #elif defined(YMH_UNA_WITH_ICONV)
-    typedef iconv_impl<AllocatorEn, AllocatorDe> codec_type;
+    typedef iconv_impl codec_type;
 #else
 #   error requires include <iconv.h> before codecs.hpp
 #endif // defined(_WIN32) || defined(_MSC_VER)
