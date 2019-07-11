@@ -31,7 +31,7 @@
  *
  * (3) Convert between Multi Bytes
  *   
- *    std::string ntext = convert<codepage::cp_utf8>(u8"utf-8 string");
+ *    std::string ntext = convert<codepage::cp_utf8>("ansi string");
  *
  * (4) Read/Save File Text
  *
@@ -1095,7 +1095,7 @@ std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp, bom::
 #elif defined(YMH_UNA_WITH_ICONV)
     typedef iconv_impl codec_type;
 #else
-#   error requires include <iconv.h> before codecs.hpp
+#   error requires include <iconv.h> before una.hpp
 #endif // defined(_WIN32) || defined(_MSC_VER)
     return std::make_shared<codec_type>(cp, bo);
 }
