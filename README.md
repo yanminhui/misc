@@ -74,13 +74,13 @@ format_bytes(s, 18446640
 
 ### [error_t](https://github.com/yanminhui/misc/blob/master/cpp/error.hpp)
 
- Save std::error_code, boost.system, GetLastError(), user custom error code 
- and error message to class [w]error_t.
+Save std::error_code, boost.system, GetLastError(), user custom error code 
+and error message to class [w]error_t.
  
- Query error information by dump() or dump_backtrace() from class [w]error_t,
- it can query error domain, value, message by the numbers of [w]error_t.
+Query error information by dump() or dump_backtrace() from class [w]error_t,
+it can query error domain, value, message by the numbers of [w]error_t.
  
- **Function Prototype**
+**Function Prototype**
  
 (1) User Custom Error
 
@@ -137,6 +137,63 @@ if (err)  // return true if error occur
 ```.sh
 File "xxx.cpp", line ?, in <function>: Open file error.log failed
 File "xxx.cpp", line ?, in <function>: Success
+```
+
+### [una](https://github.com/yanminhui/misc/blob/master/cpp/una.hpp)
+
+Unicode and ANSI (byte string) conversion is supported by class codec.
+
+Convert wide char to multi bytes by `encode<codepage::cp_xxx, bom::nobomb>` 
+and reverse it by `decode<codepage::cp_xxx, bom::nobomb>`. It can convert one 
+multi bytes to another multi bytes by convert<...>.
+
+Others, it will try convert to local codepage if you use `file_text` to read 
+file's contents. You can save multi bytes to file by `save_file_text<...>`.
+
+Attention: may throw `std::system_error` exception if failed.
+
+**Function Prototype**
+
+(1) Multi Bytes to Wide Char
+
+```.cpp
+std::wstring wtext = decode<codepage::cp_utf8>(u8"utf-8 string");
+wtext = UTF8ToUnicode<bom::nobomb>(u8"utf-8 string");"
+```
+
+(2) Wide Char to Multi Bytes
+
+```.cpp
+std::string text = encode<codepage::cp_utf8>(L"wide string");
+text = UnicodeToUTF8<bom::bomb>(L"wide string");
+```
+
+(3) Convert between Multi Bytes
+
+```.cpp
+std::string ntext = convert<codepage::cp_utf8>("ansi string");
+```
+
+(4) Read/Save File Text
+
+```.cpp
+std::wstring wtext = read_file_text(L"demo.txt");
+save_file_text<codepage::cp_utf8, bom::bomb>("demo.txt", "bingo");
+```
+
+**Usage**
+
+```.cpp
+using namespace ymh;
+
+try
+{
+    auto text = file_text("demo.txt");
+    auto wtext = decode(text);
+} 
+catch (std::system_error const& e)
+{
+}
 ```
 
 ## Python2/3
