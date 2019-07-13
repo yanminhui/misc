@@ -141,16 +141,16 @@ File "xxx.cpp", line ?, in <function>: Success
 
 ### [una](https://github.com/yanminhui/misc/blob/master/cpp/una.hpp)
 
-Unicode and ANSI (byte string) conversion is supported by class codec.
+Unicode and ANSI (byte string) conversion is supported by class `codec`.
 
 Convert wide char to multi bytes by `encode<codepage::cp_xxx, bom::nobomb>` 
 and reverse it by `decode<codepage::cp_xxx, bom::nobomb>`. It can convert one 
-multi bytes to another multi bytes by convert<...>.
+multi bytes to another multi bytes by `convert<...>`.
 
 Others, it will try convert to local codepage if you use `file_text` to read 
 file's contents. You can save multi bytes to file by `save_file_text<...>`.
 
-Attention: may throw `std::system_error` exception if failed.
+_Attention_ : may throw `std::system_error` exception if failed.
 
 **Function Prototype**
 
