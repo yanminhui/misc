@@ -142,6 +142,7 @@ enum type {
 namespace detail
 {
 
+ // @ref https://www.crifan.com/files/doc/docbook/char_encoding/release/html/char_encoding.html
 CONSTEXPR unsigned char g_utf8_bom[] = { 0xEF, 0xBB, 0xBF };
 CONSTEXPR unsigned char g_gb18030_bom[] = { 0x84, 0x31, 0x95, 0x33 };
 CONSTEXPR unsigned char g_ucs2_le_bom[] = { 0xFF, 0xFE };
