@@ -17,7 +17,7 @@ int main()
         auto res = ansi;
         puts("Result: ");
         puts(res.c_str());
-    } 
+    }
     catch (std::exception const& e)
     {
         puts("Error: ");
@@ -26,4 +26,3 @@ int main()
     }
     return 0;
 }
-

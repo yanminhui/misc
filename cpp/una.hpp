@@ -8,11 +8,11 @@
  *
  * Unicode and ANSI (byte string) conversion is supported by class codec.
  *
- * Convert wide char to multi bytes by encode<codepage::cp_xxx, bom::nobomb> 
- * and reverse it by decode<codepage::cp_xxx, bom::nobomb>. It can convert one 
+ * Convert wide char to multi bytes by encode<codepage::cp_xxx, bom::nobomb>
+ * and reverse it by decode<codepage::cp_xxx, bom::nobomb>. It can convert one
  * multi bytes to another multi bytes by convert<...>.
  *
- * Others, it will try convert to local codepage if you use file_text to read 
+ * Others, it will try convert to local codepage if you use file_text to read
  * file's contents. You can save multi bytes to file by save_file_text<...>.
  *
  * Attention: may throw std::system_error exception if failed.
@@ -20,39 +20,39 @@
  * [Function Prototype]
  *
  * (1) Multi Bytes to Wide Char
- *    
- *    std::wstring wtext = decode<codepage::cp_utf8>(u8"utf-8 string");
- *    wtext = UTF8ToUnicode<bom::nobomb>(u8"utf-8 string");"
+ *
+ *     std::wstring wtext = decode<codepage::cp_utf8>(u8"utf-8 string");
+ *     wtext = UTF8ToUnicode<bom::nobomb>(u8"utf-8 string");"
  *
  * (2) Wide Char to Multi Bytes
  *
- *    std::string text = encode<codepage::cp_utf8>(L"wide string");
- *    text = UnicodeToUTF8<bom::bomb>(L"wide string");
+ *     std::string text = encode<codepage::cp_utf8>(L"wide string");
+ *     text = UnicodeToUTF8<bom::bomb>(L"wide string");
  *
  * (3) Convert between Multi Bytes
- *   
- *    std::string ntext = convert<codepage::cp_utf8>("ansi string");
+ *
+ *     std::string ntext = convert<codepage::cp_utf8>("ansi string");
  *
  * (4) Read/Save File Text
  *
- *    std::wstring wtext = read_file_text(L"demo.txt");
- *    save_file_text<codepage::cp_utf8, bom::bomb>("demo.txt", "bingo");
+ *     std::wstring wtext = read_file_text(L"demo.txt");
+ *     save_file_text<codepage::cp_utf8, bom::bomb>("demo.txt", "bingo");
  *
  * [Usage]
  *
- *    using namespace ymh;
+ *     using namespace ymh;
  *
- *    try
- *    {
- *        auto text = file_text("demo.txt");
- *        auto wtext = decode(text);
- *    } 
- *    catch (std::system_error const& e)
- *    {
- *    }
- *   
+ *     try
+ *     {
+ *         auto text = file_text("demo.txt");
+ *         auto wtext = decode(text);
+ *     }
+ *     catch (std::system_error const& e)
+ *     {
+ *     }
+ *
  */
- 
+
 #ifndef YMH_UNA_HPP
 #define YMH_UNA_HPP
 
@@ -72,27 +72,27 @@
 // For Windows
 #if defined(_WIN32) || defined(_MSC_VER)
 #   include <windows.h>
-#endif  // defined(_WIN32) || defined(_MSC_VER)
+#endif // _WIN32 || _MSC_VER
 
 // For GNU/Linux
 #if defined(__GLIBC__) && __GLIBC__ >= 2 || defined(_ICONV_H)
 #   if !defined(YMH_UNA_WITH_ICONV)
 #       define YMH_UNA_WITH_ICONV 1
-#   endif  // !defined(YMH_UNA_WITH_ICONV)
-#endif  // defined(__GLIBC__) && __GLIBC__ >= 2 || defined(_ICONV_H)
+#   endif // !YMH_UNA_WITH_ICONV
+#endif // __GLIBC__ && __GLIBC__ >= 2 || _ICONV_H
 
 // For MacOS
 #if defined(__apple_build_version__) && __apple_build_version__ >= 10003000
 #   if !defined(YMH_UNA_WITH_ICONV)
 #       define YMH_UNA_WITH_ICONV 1
-#   endif  // !defined(YMH_UNA_WITH_ICONV)
-#endif  // defined(__apple_build_version__) && __apple_build_version__ >= 10003000
+#   endif  // !YMH_UNA_WITH_ICONV
+#endif  // __apple_build_version__ && __apple_build_version__ >= 10003000
 
 #if defined(_LIBICONV_H) || defined(_ICONV_H_)
 #   if !defined(YMH_UNA_WITH_ICONV)
 #       define YMH_UNA_WITH_ICONV 1
-#   endif  // !defined(YMH_UNA_WITH_ICONV)
-#endif  // defined(_LIBICONV_H) || defined(_ICONV_H_)
+#   endif  // !YMH_UNA_WITH_ICONV
+#endif  // _LIBICONV_H || _ICONV_H_
 
 #if defined(YMH_UNA_WITH_ICONV)
 #   include <iconv.h>
@@ -142,7 +142,8 @@ enum type {
 namespace detail
 {
 
- // @ref https://www.crifan.com/files/doc/docbook/char_encoding/release/html/char_encoding.html
+// @ref https://www.crifan.com/
+//      files/doc/docbook/char_encoding/release/html/char_encoding.html
 CONSTEXPR unsigned char g_utf8_bom[] = { 0xEF, 0xBB, 0xBF };
 CONSTEXPR unsigned char g_gb18030_bom[] = { 0x84, 0x31, 0x95, 0x33 };
 CONSTEXPR unsigned char g_ucs2_le_bom[] = { 0xFF, 0xFE };
@@ -150,14 +151,14 @@ CONSTEXPR unsigned char g_ucs2_be_bom[] = { 0xFE, 0xFF };
 
 CONSTEXPR unsigned char g_ucs4_le_bom[] = { 0xFF, 0xFE, 0x00, 0x00 };
 CONSTEXPR unsigned char g_ucs4_be_bom[] = { 0x00, 0x00, 0xFE, 0xFF };
-CONSTEXPR unsigned char g_utf7_bom[] = { 0x2B, 0x2F, 0x76, 0x38 }; 
-CONSTEXPR unsigned char g_utf7_bom2[] = { 0x2B, 0x2F, 0x76, 0x39 }; 
-CONSTEXPR unsigned char g_utf7_bom3[] = { 0x2B, 0x2F, 0x76, 0x2B }; 
-CONSTEXPR unsigned char g_utf7_bom4[] = { 0x2B, 0x2F, 0x76, 0x2F }; 
-CONSTEXPR unsigned char g_utf1_bom[] = { 0xF7, 0x64, 0x4C }; 
-CONSTEXPR unsigned char g_utf_ebcdic_bom[] = { 0xDD, 0x73, 0x66, 0x73 }; 
-CONSTEXPR unsigned char g_scsu_bom[] = { 0x0E, 0xFE, 0xFF }; 
-CONSTEXPR unsigned char g_bocu1_bom[] = { 0xFB, 0xEE, 0x28 }; 
+CONSTEXPR unsigned char g_utf7_bom[] = { 0x2B, 0x2F, 0x76, 0x38 };
+CONSTEXPR unsigned char g_utf7_bom2[] = { 0x2B, 0x2F, 0x76, 0x39 };
+CONSTEXPR unsigned char g_utf7_bom3[] = { 0x2B, 0x2F, 0x76, 0x2B };
+CONSTEXPR unsigned char g_utf7_bom4[] = { 0x2B, 0x2F, 0x76, 0x2F };
+CONSTEXPR unsigned char g_utf1_bom[] = { 0xF7, 0x64, 0x4C };
+CONSTEXPR unsigned char g_utf_ebcdic_bom[] = { 0xDD, 0x73, 0x66, 0x73 };
+CONSTEXPR unsigned char g_scsu_bom[] = { 0x0E, 0xFE, 0xFF };
+CONSTEXPR unsigned char g_bocu1_bom[] = { 0xFB, 0xEE, 0x28 };
 
 // <length, chars>
 inline std::pair<int, unsigned char const*> get_bom(codepage::type cp)
@@ -190,9 +191,9 @@ inline std::pair<int, unsigned char const*> get_bom(codepage::type cp)
     return std::make_pair(size, chars);
 }
 
-template<class T>
+template <class T>
 struct default_del
-{   
+{
     // default deleter for unique_ptr
     typedef default_del<T> _Myt;
 
@@ -200,14 +201,14 @@ struct default_del
     {
     }
 
-    template<class T2>
+    template <class T2>
     default_del(default_del<T2> const&)
     {
     }
 
     void operator()(T *p) const
     {   // delete a pointer
-        if (0 < sizeof (T) && p)    // won't compile for incomplete type
+        if (0 < sizeof (T) && p) // won't compile for incomplete type
         {
             ::free(p);
         }
@@ -217,12 +218,11 @@ struct default_del
 typedef std::unique_ptr<char[], default_del<char> > char_ptr;
 typedef std::unique_ptr<wchar_t[], default_del<wchar_t> > wchar_ptr;
 
-}  // namespace detail
+} // namespace detail
 
-//============================================================================
-// Abstract Platform Implement.
-//
-//============================================================================
+/*****************************************************************************/
+/* Abstract Platform Implement. */
+
 namespace detail
 {
 
@@ -233,21 +233,22 @@ public:
     typedef std::function<wchar_t* (int)> alloc4de_t;
 
 public:
-    codec_impl(codepage::type cp, bom::type bo) : cp_(cp), bom_(bo) 
+    codec_impl(codepage::type cp, bom::type bo) : cp_(cp), bom_(bo)
     {}
-    
-    virtual ~codec_impl() 
+
+    virtual ~codec_impl()
     {}
-    
-    static std::shared_ptr<codec_impl> create_instance(codepage::type cp, bom::type bo);
-    
+
+    static std::shared_ptr<codec_impl> create_instance(codepage::type cp
+                                                       , bom::type bo);
+
     virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
-        , alloc4en_t const& allocator) const = 0;
+                             , alloc4en_t const& allocator) const = 0;
 
     virtual void decode_impl(char const* bytes, int in_size, int& out_size
-        , alloc4de_t const& allocator) const = 0;
-    
-protected:    
+                             , alloc4de_t const& allocator) const = 0;
+
+protected:
     std::pair<int, unsigned char const*> get_bom() const
     {
         if (bom_ == bom::nobomb)
@@ -258,7 +259,7 @@ protected:
         }
         return detail::get_bom(this->cp_);
     }
-    
+
 protected:
     codepage::type cp_;
     bom::type bom_;
@@ -266,10 +267,9 @@ protected:
 
 }  // namespace detail
 
-//============================================================================
-// Codec Bridge Interface.
-//
-//============================================================================
+/*****************************************************************************/
+/* Codec Bridge Interface. */
+
 class codec
 {
 public:
@@ -289,73 +289,76 @@ public:
     static CONSTEXPR auto cp_ucs2_be = codepage::cp_ucs2_be;
 
 public:
-    explicit codec(codepage::type cp = codepage::cp_default, bom::type bo = bom::nobomb)
+    explicit codec(codepage::type cp = codepage::cp_default
+                   , bom::type bo = bom::nobomb)
         : cp_(cp), bom_(bo)
     {}
-    
-    virtual ~codec() 
+
+    virtual ~codec()
     {}
 
     char_ptr encode(wchar_t const* wstr, int in_size, int& out_size) const
     {
         char_ptr out_ptr;
         int out_num = 0;
-                
-        encode_impl(wstr, in_size, out_size
-            , [&out_ptr, &out_num](int n) -> char* 
-            {
-                out_num = n;
-                char* cp = nullptr;
-                
-                if (out_ptr)
-                {
-                    cp = (char*)::realloc(out_ptr.release()
-                        , out_num * sizeof(char));
-                }
-                else
-                {
-                    cp = (char*)::calloc(out_num, sizeof(char));
-                }
-                
-                if (!cp)
-                {
-                    throw std::system_error(std::make_error_code(std::errc::not_enough_memory)
-                        , "Allocate memory for encode");
-                }
 
-                char_ptr p(cp);
-                out_ptr.swap(p);
-                
-                return out_ptr.get();
-            });
-            
+        encode_impl(wstr, in_size, out_size
+                    , [&out_ptr, &out_num](int n) -> char*
+                      {
+                          out_num = n;
+                          char* cp = nullptr;
+
+                          if (out_ptr)
+                          {
+                              cp = (char*)::realloc(out_ptr.release()
+                                                    , out_num * sizeof(char));
+                          }
+                          else
+                          {
+                              cp = (char*)::calloc(out_num, sizeof(char));
+                          }
+
+                          if (!cp)
+                          {
+                              throw std::system_error(
+                                  std::make_error_code(
+                                      std::errc::not_enough_memory)
+                                  , "Allocate memory for encode");
+                          }
+
+                          char_ptr p(cp);
+                          out_ptr.swap(p);
+
+                          return out_ptr.get();
+                      });
+
         if (out_size < out_num)
         {
             out_ptr[out_size] = '\0';
         }
         return std::move(out_ptr);
     }
-    
+
     std::string encode(std::wstring const& wstr) const
     {
         auto const in_size = wstr.size();
         if ((std::numeric_limits<int>::max)() < in_size)
         {
             throw std::system_error(std::make_error_code
-                (std::errc::result_out_of_range)
-                , "Input character's size is out of range");
+                                    (std::errc::result_out_of_range)
+                                    , "Input character's size is out of range");
         }
 
         int out_size = 0;
         std::string out;
         encode_impl(wstr.data(), static_cast<int>(in_size), out_size
-            , [&out](int n) -> char*
-            {
-                out.resize(n);
-                return const_cast<char*>(out.data());
-            }
-        );
-        
+                    , [&out](int n) -> char*
+                      {
+                          out.resize(n);
+                          return const_cast<char*>(out.data());
+                      }
+            );
+
         out.resize(out_size);
         return out;
     }
@@ -364,65 +367,68 @@ public:
     {
         wchar_ptr out_ptr;
         int out_num = 0;
-        
-        decode_impl(bytes, in_size, out_size
-            , [&out_ptr, &out_num](int n) -> wchar_t*
-            {
-                out_num = n;
-                wchar_t* cp = nullptr;
-                
-                if (out_ptr)
-                {
-                    cp = (wchar_t*)::realloc(out_ptr.release()
-                        , out_num * sizeof(wchar_t));
-                }
-                else
-                {
-                    cp = (wchar_t*)::calloc(out_num, sizeof(wchar_t));
-                }
-                
-                if (!cp)
-                {
-                    throw std::system_error(std::make_error_code(std::errc::not_enough_memory)
-                        , "Allocate memory for decode");
-                }
 
-                wchar_ptr p(cp);
-                out_ptr.swap(p);
-                
-                return out_ptr.get();
-            }
-        );
-        
+        decode_impl(bytes, in_size, out_size
+                    , [&out_ptr, &out_num](int n) -> wchar_t*
+                      {
+                          out_num = n;
+                          wchar_t* cp = nullptr;
+
+                          if (out_ptr)
+                          {
+                              cp = (wchar_t*)::realloc(
+                                  out_ptr.release()
+                                  , out_num * sizeof(wchar_t));
+                          }
+                          else
+                          {
+                              cp = (wchar_t*)::calloc(out_num, sizeof(wchar_t));
+                          }
+
+                          if (!cp)
+                          {
+                              throw std::system_error(
+                                  std::make_error_code(
+                                      std::errc::not_enough_memory)
+                                  , "Allocate memory for decode");
+                          }
+
+                          wchar_ptr p(cp);
+                          out_ptr.swap(p);
+
+                          return out_ptr.get();
+                      }
+            );
+
         if (out_size < out_num)
         {
             out_ptr.get()[out_size] = L'\0';
         }
-        return std::move(out_ptr);        
+        return std::move(out_ptr);
     }
-    
+
     std::wstring decode(std::string const& bytes) const
     {
         auto const in_size = bytes.size();
         if ((std::numeric_limits<int>::max)() < in_size)
         {
             throw std::system_error(std::make_error_code
-                (std::errc::result_out_of_range)
-                , "Input character's size is out of range");
+                                    (std::errc::result_out_of_range)
+                                    , "Input character's size is out of range");
         }
 
         std::wstring out;
         int out_size = 0;
         decode_impl(bytes.data(), static_cast<int>(in_size), out_size
-            , [&out](int n) -> wchar_t*
-            {
-                out.resize(n);
-                return const_cast<wchar_t*>(out.data());
-            }
-        );
-        
+                    , [&out](int n) -> wchar_t*
+                      {
+                          out.resize(n);
+                          return const_cast<wchar_t*>(out.data());
+                      }
+            );
+
         out.resize(out_size);
-        return out;       
+        return out;
     }
 
 public:
@@ -430,7 +436,7 @@ public:
     {
         return encode(wstr, in_size, out_size);
     }
-    
+
     std::string operator()(std::wstring const& wstr) const
     {
         return encode(wstr);
@@ -440,40 +446,39 @@ public:
     {
         return decode(bytes, in_size, out_size);
     }
-    
+
     std::wstring operator()(std::string const& bytes) const
     {
         return decode(bytes);
     }
-    
+
 private:
     // allocator: char* allocator(int size);
     template <class AllocatorT>
     void encode_impl(wchar_t const* wstr, int in_size
-        , int& out_size, AllocatorT const& allocator) const
+                     , int& out_size, AllocatorT const& allocator) const
     {
-       auto ci = detail::codec_impl::create_instance(cp_, bom_);
-       return ci->encode_impl(wstr, in_size, out_size, allocator);
+        auto ci = detail::codec_impl::create_instance(cp_, bom_);
+        return ci->encode_impl(wstr, in_size, out_size, allocator);
     }
 
     // allocator: wchar_t* allocator(int size);
     template <class AllocatorT>
     void decode_impl(char const* bytes, int in_size
-        , int& out_size, AllocatorT const& allocator) const
+                     , int& out_size, AllocatorT const& allocator) const
     {
         auto ci = detail::codec_impl::create_instance(cp_, bom_);
         return ci->decode_impl(bytes, in_size, out_size, allocator);
     }
-    
+
 private:
     codepage::type cp_;
     bom::type bom_;
-};  
+};
 
-//============================================================================
-// Windows Implement.
-//
-//============================================================================
+/*****************************************************************************/
+/* Windows Implement. */
+
 #if defined(_WIN32) || defined(_MSC_VER)
 
 //
@@ -485,10 +490,10 @@ namespace ucs2_le
 {
 
 inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
-    , char* out, int out_size)
+                               , char* out, int out_size)
 {
     auto const in_byte_size = in_size * static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     if (out_size == 0)
     {
         return in_byte_size;
@@ -496,8 +501,8 @@ inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
 
     auto in = (unsigned char const*)wstr;
     for (int i = 0
-        ; i != (in_byte_size < out_size ? in_byte_size : out_size)
-        ; ++i)
+         ; i != (in_byte_size < out_size ? in_byte_size : out_size)
+         ; ++i)
     {
         *(out + i) = *(in + i);
     }
@@ -505,10 +510,10 @@ inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
 }
 
 inline int MultiByteToWideChar(char const* bytes, int in_size
-    , wchar_t* out, int out_size)
+                               , wchar_t* out, int out_size)
 {
     auto const out_wchar_size = in_size / static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     if (out_size == 0)
     {
         return out_wchar_size;
@@ -516,10 +521,10 @@ inline int MultiByteToWideChar(char const* bytes, int in_size
 
     auto p_out = (unsigned char*)out;
     auto const out_byte_size = out_size * static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     for (int i = 0
-        ; i != (in_size < out_byte_size ? in_size : out_byte_size)
-        ; ++i)
+         ; i != (in_size < out_byte_size ? in_size : out_byte_size)
+         ; ++i)
     {
         *(p_out + i) = *(bytes + i);
     }
@@ -529,13 +534,13 @@ inline int MultiByteToWideChar(char const* bytes, int in_size
 inline bool is_ucs2_le(char const* bytes, int in_size)
 {
     if (in_size % 2)
-    // ucs2 byte size is even
+        // ucs2 byte size is even
     {
         --in_size;
     }
 
     return ::IsTextUnicode(reinterpret_cast<void const*>(bytes)
-        , in_size, nullptr) ? true : false;
+                           , in_size, nullptr) ? true : false;
 }
 
 inline bool is_ucs2_le(std::string const& bytes)
@@ -544,12 +549,12 @@ inline bool is_ucs2_le(std::string const& bytes)
     if ((std::numeric_limits<int>::max)() < in_size)
     {
         throw std::system_error(std::make_error_code
-            (std::errc::result_out_of_range)
-            , "Input character's size is out of range");
+                                (std::errc::result_out_of_range)
+                                , "Input character's size is out of range");
     }
 
     return is_ucs2_le(const_cast<char const*>(bytes.data())
-        , static_cast<int>(in_size));
+                      , static_cast<int>(in_size));
 }
 
 } // namespace ucs2_le
@@ -558,10 +563,10 @@ namespace ucs2_be
 {
 
 inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
-    , char* out, int out_size)
+                               , char* out, int out_size)
 {
     auto const in_byte_size = in_size * static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     if (out_size == 0)
     {
         return in_byte_size;
@@ -569,8 +574,8 @@ inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
 
     auto in = (unsigned char const*)wstr;
     for (int i = 0
-        ; i != (in_byte_size < out_size ? in_byte_size : out_size)
-        ; ++i)
+         ; i != (in_byte_size < out_size ? in_byte_size : out_size)
+         ; ++i)
     {
         *(out + i) = *(in + ((i % 2 == 0) ? (i + 1) : (i - 1)));
     }
@@ -578,10 +583,10 @@ inline int WideCharToMultiByte(wchar_t const* wstr, int in_size
 }
 
 inline int MultiByteToWideChar(char const* bytes, int in_size
-    , wchar_t* out, int out_size)
+                               , wchar_t* out, int out_size)
 {
     auto const out_wchar_size = in_size / static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     if (out_size == 0)
     {
         return out_wchar_size;
@@ -589,10 +594,10 @@ inline int MultiByteToWideChar(char const* bytes, int in_size
 
     auto p_out = (unsigned char*)out;
     auto const out_byte_size = out_size * static_cast<int>
-        (sizeof(wchar_t) / sizeof(char));
+    (sizeof(wchar_t) / sizeof(char));
     for (int i = 0
-        ; i != (in_size < out_byte_size ? in_size : out_byte_size)
-        ; ++i)
+         ; i != (in_size < out_byte_size ? in_size : out_byte_size)
+         ; ++i)
     {
         *(p_out + i) = *(bytes + ((i % 2 == 0) ? (i + 1) : (i - 1)));
     }
@@ -617,8 +622,8 @@ inline int to_win_codepage(codepage::type cp)
 }
 
 inline int WideCharToMultiByte(codepage::type cp
-    , wchar_t const* wstr, int in_size
-    , char* out, int out_size)
+                               , wchar_t const* wstr, int in_size
+                               , char* out, int out_size)
 {
     using namespace codepage;
     switch (cp)
@@ -631,14 +636,14 @@ inline int WideCharToMultiByte(codepage::type cp
         break;
     }
     return ::WideCharToMultiByte(to_win_codepage(cp), 0
-        , wstr, in_size
-        , out, out_size
-        , nullptr, nullptr);
+                                 , wstr, in_size
+                                 , out, out_size
+                                 , nullptr, nullptr);
 }
 
 inline int MultiByteToWideChar(codepage::type cp
-    , char const* bytes, int in_size
-    , wchar_t* out, int out_size)
+                               , char const* bytes, int in_size
+                               , wchar_t* out, int out_size)
 {
     using namespace codepage;
     switch (cp)
@@ -651,8 +656,8 @@ inline int MultiByteToWideChar(codepage::type cp
         break;
     }
     return ::MultiByteToWideChar(to_win_codepage(cp), 0
-        , bytes, in_size
-        , out, out_size);
+                                 , bytes, in_size
+                                 , out, out_size);
 }
 
 //
@@ -664,9 +669,9 @@ public:
     win_impl(codepage::type cp, bom::type bo)
         : codec_impl(cp, bo)
     {}
-    
+
     virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
-        , codec_impl::alloc4en_t const& allocator) const
+                             , codec_impl::alloc4en_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -675,7 +680,7 @@ public:
         for (out_size = 0; !out; out_size += bom_size)
         {
             if (!in_size)
-            // fill BOM if in_size == 0, then exit.
+                // fill BOM if in_size == 0, then exit.
             {
                 out = allocator(bom_size);
                 if (bom_chars)
@@ -703,29 +708,29 @@ public:
                 }
             }
             out_size = detail::WideCharToMultiByte(this->cp_
-                , wstr, in_size
-                , out, out_size);
+                                                   , wstr, in_size
+                                                   , out, out_size);
             if (out_size == 0)
             {
                 throw std::system_error(std::error_code(::GetLastError()
-                    , std::system_category())
-                    , "Failed encode");
+                                                        , std::system_category())
+                                        , "Failed encode");
             }
-        }    
+        }
     }
-    
+
     virtual void decode_impl(char const* bytes, int in_size, int& out_size
-        , codec_impl::alloc4de_t const& allocator) const
+                             , codec_impl::alloc4de_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
         if (bom_chars && in_size >= bom_size)
-        // skip bom chars
+            // skip bom chars
         {
             auto p_bytes = bytes;
-            for (auto p_bom = bom_chars 
-                ; p_bom < bom_chars + bom_size
-                ; ++p_bom, ++p_bytes)
+            for (auto p_bom = bom_chars
+                 ; p_bom < bom_chars + bom_size
+                 ; ++p_bom, ++p_bytes)
             {
                 if (*p_bom != static_cast<decltype(*p_bom)>(*p_bytes))
                 {
@@ -741,19 +746,20 @@ public:
 
         wchar_t* out = nullptr;
         for (out_size = 0; !out && in_size; )
-        // exit if in_size == 0
+            // exit if in_size == 0
         {
             if (out_size != 0)
             {
                 out = allocator(out_size);
             }
             out_size = detail::MultiByteToWideChar(this->cp_
-                , bytes, in_size
-                , out, out_size);
+                                                   , bytes, in_size
+                                                   , out, out_size);
             if (out_size == 0)
             {
-                throw std::system_error(std::error_code(::GetLastError()
-                    , std::system_category())
+                throw std::system_error(
+                    std::error_code(::GetLastError()
+                                    , std::system_category())
                     , "Failed decode");
             }
         }
@@ -762,11 +768,11 @@ public:
 
 } // namespace detail
 
-#endif  // defined(_WIN32) || defined(_MSC_VER)
-//============================================================================
-// IConv Implement.
-//
-//============================================================================
+#endif // _WIN32 || _MSC_VER
+
+/*****************************************************************************/
+/* IConv Implement. */
+
 #if defined(YMH_UNA_WITH_ICONV)
 
 namespace detail
@@ -779,7 +785,7 @@ inline std::string default_wide_charset()
         unsigned char c[sizeof(std::uint16_t)];
     };
     n = 0x0102;
-    
+
     auto const big_endian = (c[0] == 0x01 && c[1] == 0x02);
     auto const byte_size = sizeof(wchar_t);
 
@@ -795,13 +801,13 @@ inline std::string to_iconv_codepage(codepage::type cp)
     using namespace codepage;
     switch(cp)
     {
-    case cp_default: 
+    case cp_default:
     {
         std::locale loc("");
         auto name = loc.name();
         auto bp = name.find('.');
         auto ep = name.find('@', bp);
-        return name.substr(bp == std::string::npos ? bp : bp + 1, ep);    
+        return name.substr(bp == std::string::npos ? bp : bp + 1, ep);
     }
     case cp_utf8:    return "UTF-8";
     case cp_gb2312:  return "CP936";
@@ -820,7 +826,7 @@ public:
     {}
 
     virtual void encode_impl(wchar_t const* wstr, int in_size, int& out_size
-        , codec_impl::alloc4en_t const& allocator) const
+                             , codec_impl::alloc4en_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
@@ -829,7 +835,7 @@ public:
         for (out_size = 0; !out; out_size += bom_size)
         {
             if (!in_size)
-            // fill BOM if in_size == 0, then exit.
+                // fill BOM if in_size == 0, then exit.
             {
                 out = allocator(bom_size);
                 if (bom_chars)
@@ -858,7 +864,7 @@ public:
             }
 
             if (out_size == 0)
-            // calculate out buffer size.
+                // calculate out buffer size.
             {
                 // perhaps too large, but that's OK
                 // encodings like shift-JIS need some prefix space
@@ -868,11 +874,12 @@ public:
             }
 
             if (this->cp_ == codepage::cp_default)
-            // Unicode to ANSI
+                // Unicode to ANSI
             {
                 typedef wchar_t from_type;
                 typedef char to_type;
-                typedef std::codecvt<from_type, to_type, std::mbstate_t> cvt_facet;
+                typedef std::codecvt<from_type
+                                     , to_type, std::mbstate_t> cvt_facet;
 
                 std::locale loc("");
                 auto& cvt = std::use_facet<cvt_facet>(loc);
@@ -883,7 +890,8 @@ public:
                     from_type const* fn = nullptr;
 
                     to_type* tb = const_cast<to_type*>(out);
-                    to_type* te = const_cast<to_type*>(out + out_size - bom_size);
+                    to_type* te = const_cast<to_type*>(
+                        out + out_size - bom_size);
                     to_type* tn = nullptr;
 
                     std::mbstate_t state = std::mbstate_t();
@@ -899,20 +907,22 @@ public:
                         out = allocator(out_size) + bom_size;
                         continue;
                     }
-                    
+
                     // failed
-                    throw std::system_error(std::make_error_code(std::errc::illegal_byte_sequence)
+                    throw std::system_error(
+                        std::make_error_code(std::errc::illegal_byte_sequence)
                         , "std::codecvt for encode");
                 }
                 return ;
             }
 
             // open
-            auto cd = ::iconv_open(to_iconv_codepage(this->cp_).c_str(), default_wide_charset().c_str());
+            auto cd = ::iconv_open(to_iconv_codepage(this->cp_).c_str()
+                                   , default_wide_charset().c_str());
             if (cd == (iconv_t)(-1))
             {
-                throw std::system_error(std::error_code(errno
-                    , std::system_category())
+                throw std::system_error(
+                    std::error_code(errno, std::system_category())
                     , "iconv_open for encode");
             }
 
@@ -920,55 +930,58 @@ public:
             char* inbuf = (char*)wstr;
             size_t inbytesleft = sizeof(wchar_t) * in_size;
             char* outbuf = out;
-            size_t outbytesleft = out_size - bom_size;                  
-            
+            size_t outbytesleft = out_size - bom_size;
+
             ::iconv(cd, nullptr, nullptr, nullptr, nullptr);
             for ( ; ; )
             {
-                auto rv = ::iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+                auto rv = ::iconv(cd
+                                  , &inbuf, &inbytesleft
+                                  , &outbuf, &outbytesleft);
                 if (rv == static_cast<size_t>(-1))
                 {
                     if (errno == E2BIG)
-                    // outbuf is too small, increment its size.
+                        // outbuf is too small, increment its size.
                     {
-                        outbuf = allocator(out_size + BUFSIZ) + (out_size - outbytesleft);
+                        outbuf = allocator(out_size + BUFSIZ);
+                        outbuf += (out_size - outbytesleft);
                         outbytesleft += BUFSIZ;
                         out_size += BUFSIZ;
                         continue;
                     }
 
                     ::iconv_close(cd);
-                    throw std::system_error(std::error_code(errno
-                        , std::system_category())
+                    throw std::system_error(
+                        std::error_code(errno, std::system_category())
                         , "iconv for encode");
                 }
-                
+
                 out_size -= outbytesleft;
                 break;
             }
-            
+
             // close
             if (::iconv_close(cd) == static_cast<size_t>(-1))
             {
-                throw std::system_error(std::error_code(errno
-                    , std::system_category())
+                throw std::system_error(
+                    std::error_code(errno, std::system_category())
                     , "iconv_close for encode");
             }
-        }    
+        }
     }
 
     virtual void decode_impl(char const* bytes, int in_size, int& out_size
-        , codec_impl::alloc4de_t const& allocator) const
+                             , codec_impl::alloc4de_t const& allocator) const
     {
         auto const bom_size = this->get_bom().first;
         auto const bom_chars = this->get_bom().second;
         if (bom_chars && in_size >= bom_size)
-        // skip bom chars
+            // skip bom chars
         {
             auto p_bytes = bytes;
-            for (auto p_bom = bom_chars 
-                ; p_bom < bom_chars + bom_size
-                ; ++p_bom, ++p_bytes)
+            for (auto p_bom = bom_chars
+                 ; p_bom < bom_chars + bom_size
+                 ; ++p_bom, ++p_bytes)
             {
                 if (*p_bom != static_cast<decltype(*p_bom)>(*p_bytes))
                 {
@@ -984,27 +997,28 @@ public:
 
         wchar_t* out = nullptr;
         for (out_size = 0; !out && in_size; )
-        // exit if in_size == 0
+            // exit if in_size == 0
         {
             if (out_size != 0)
             {
                 out = allocator(out_size);
             }
             else if (out_size == 0)
-            // calculate out buffer size.
+                // calculate out buffer size.
             {
                 // perhaps too large, but that's OK
                 CONSTEXPR auto ratio = 3;
                 out_size = in_size * ratio;
                 continue ;
             }
-            
+
             if (this->cp_ == codepage::cp_default)
-            // ANSI to Unicode
+                // ANSI to Unicode
             {
                 typedef char from_type;
                 typedef wchar_t to_type;
-                typedef std::codecvt<to_type, from_type, std::mbstate_t> cvt_facet;
+                typedef std::codecvt<to_type
+                                     , from_type, std::mbstate_t> cvt_facet;
 
                 std::locale loc("");
                 auto& cvt = std::use_facet<cvt_facet>(loc);
@@ -1033,45 +1047,50 @@ public:
                     }
 
                     // failed
-                    throw std::system_error(std::make_error_code(std::errc::illegal_byte_sequence)
+                    throw std::system_error(
+                        std::make_error_code(std::errc::illegal_byte_sequence)
                         , "std::codecvt for encode");
                 }
                 return ;
             }
 
             // open
-            auto cd = ::iconv_open(default_wide_charset().c_str(), to_iconv_codepage(this->cp_).c_str());
+            auto cd = ::iconv_open(default_wide_charset().c_str()
+                                   , to_iconv_codepage(this->cp_).c_str());
             if (cd == (iconv_t)(-1))
             {
-                throw std::system_error(std::error_code(errno
-                    , std::system_category())
+                throw std::system_error(
+                    std::error_code(errno, std::system_category())
                     , "iconv_open for decode");
             }
-            
+
             // iconv
             char* inbuf = (char*)bytes;
             size_t inbytesleft = in_size;
             char* outbuf = (char*)out;
-            size_t outbytesleft = out_size * sizeof(wchar_t);               
-            
+            size_t outbytesleft = out_size * sizeof(wchar_t);
+
             ::iconv(cd, nullptr, nullptr, nullptr, nullptr);
             for ( ; ; )
             {
-                auto rv = ::iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+                auto rv = ::iconv(cd
+                                  , &inbuf, &inbytesleft
+                                  , &outbuf, &outbytesleft);
                 if (rv == static_cast<size_t>(-1))
                 {
                     if (errno == E2BIG)
-                    // outbuf is too small, increment its size.
+                        // outbuf is too small, increment its size.
                     {
-                        outbuf = (char*)allocator(out_size + BUFSIZ) + (out_size * sizeof(wchar_t) - outbytesleft);
+                        outbuf = (char*)allocator(out_size + BUFSIZ);
+                        outbuf += (out_size * sizeof(wchar_t) - outbytesleft);
                         outbytesleft += BUFSIZ * sizeof(wchar_t);
                         out_size += BUFSIZ;
                         continue;
                     }
-                    
+
                     ::iconv_close(cd);
-                    throw std::system_error(std::error_code(errno
-                        , std::system_category())
+                    throw std::system_error(
+                        std::error_code(errno, std::system_category())
                         , "iconv for decode");
                 }
 
@@ -1082,25 +1101,26 @@ public:
             // close
             if (::iconv_close(cd) == static_cast<size_t>(-1))
             {
-                throw std::system_error(std::error_code(errno
-                    , std::system_category())
+                throw std::system_error(
+                    std::error_code(errno, std::system_category())
                     , "iconv_close for decode");
             }
         }
     }
 };
 
-}  // namespace detail
+} // namespace detail
 
-#endif  // YMH_UNA_WITH_ICONV
-//============================================================================
-// Create Codec Implement Instance.
-//
-//============================================================================
+#endif // YMH_UNA_WITH_ICONV
+
+/*****************************************************************************/
+/* Create Codec Implement Instance. */
+
 namespace detail
 {
- 
-std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp, bom::type bo)
+
+std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp
+                                                        , bom::type bo)
 {
 #if defined(_WIN32) || defined(_MSC_VER)
     typedef win_impl codec_type;
@@ -1108,53 +1128,52 @@ std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp, bom::
     typedef iconv_impl codec_type;
 #else
 #   error requires include <iconv.h> before una.hpp
-#endif // defined(_WIN32) || defined(_MSC_VER)
+#endif // _WIN32 || _MSC_VER
     return std::make_shared<codec_type>(cp, bo);
 }
 
 }  // namespace detail
 
-//============================================================================
-// Convenient User Interface. 
-//
-//============================================================================
+/*****************************************************************************/
+/* Convenient User Interface. */
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-        , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline std::string encode(std::wstring const& wstr)
 {
     return codec(cp, bo)(wstr);
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-        , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline codec::char_ptr encode(wchar_t const* wstr, int in_size, int& out_size)
 {
     return std::move(codec(cp, bo)(wstr, in_size, out_size));
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline std::wstring decode(std::string const& bytes)
 {
     return codec(cp, bo)(bytes);
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline codec::wchar_ptr decode(char const* bytes, int in_size, int& out_size)
 {
     return std::move(codec(cp, bo)(bytes, in_size, out_size));
 }
 
 template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
-    , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
-    , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
+          , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
+          , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
+          , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-    , typename std::enable_if<from_cp != to_cp || from_bo != to_bo, int>::type = 0 >
+          , typename std::enable_if<
+              from_cp != to_cp || from_bo != to_bo, int>::type = 0 >
 #else
-    >
+>
 #endif
 inline codec::char_ptr convert(char const* bytes, int in_size, int& out_size)
 {
@@ -1164,10 +1183,11 @@ inline codec::char_ptr convert(char const* bytes, int in_size, int& out_size)
 
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
 template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
-    , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
-    , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
-    , typename std::enable_if<from_cp == to_cp && from_bo == to_bo, int>::type = 0>
+          , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
+          , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
+          , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
+          , typename std::enable_if<
+                from_cp == to_cp && from_bo == to_bo, int>::type = 0>
 inline codec::char_ptr convert(char const* bytes, int in_size, int& out_size)
 {
     // TODO: have better ?
@@ -1177,17 +1197,18 @@ inline codec::char_ptr convert(char const* bytes, int in_size, int& out_size)
     return std::move(to);
 }
 #else
-    // need c++11
+// need c++11
 #endif
 
 template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
-    , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
-    , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
+          , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
+          , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
+          , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-    , typename std::enable_if<from_cp != to_cp || from_bo != to_bo, int>::type = 0>
+          , typename std::enable_if<
+              from_cp != to_cp || from_bo != to_bo, int>::type = 0>
 #else
-    >
+>
 #endif
 inline std::string convert(std::string const& bytes)
 {
@@ -1196,16 +1217,17 @@ inline std::string convert(std::string const& bytes)
 
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
 template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
-    , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
-    , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
-    , typename std::enable_if<from_cp == to_cp && from_bo == to_bo, int>::type = 0>
+          , codepage::type to_cp CP_DEFAULT_TEMPLATE_ARG
+          , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
+          , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
+          , typename std::enable_if<
+                from_cp == to_cp && from_bo == to_bo, int>::type = 0>
 inline std::string convert(std::string const& bytes)
 {
     return bytes;
 }
 #else
-    // need c++11
+// need c++11
 #endif
 
 // UnicodeToANSI
@@ -1216,7 +1238,8 @@ inline std::string UnicodeToANSI(std::wstring const& wstr)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::char_ptr UnicodeToANSI(wchar_t const* wstr, int in_size, int& out_size)
+inline codec::char_ptr UnicodeToANSI(wchar_t const* wstr
+                                     , int in_size, int& out_size)
 {
     return std::move(encode<codepage::cp_default, bo>(wstr, in_size, out_size));
 }
@@ -1229,9 +1252,11 @@ inline std::wstring ANSIToUnicode(std::string const& bytes)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::wchar_ptr ANSIToUnicode(char const* bytes, int in_size, int& out_size)
+inline codec::wchar_ptr ANSIToUnicode(char const* bytes, int in_size
+                                      , int& out_size)
 {
-    return std::move(decode<codepage::cp_default, bo>(bytes, in_size, out_size));
+    return std::move(decode<codepage::cp_default, bo>(bytes, in_size
+                                                      , out_size));
 }
 
 // UnicodeToUTF8
@@ -1242,7 +1267,8 @@ inline std::string UnicodeToUTF8(std::wstring const& wstr)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::char_ptr UnicodeToUTF8(wchar_t const* wstr, int in_size, int& out_size)
+inline codec::char_ptr UnicodeToUTF8(wchar_t const* wstr, int in_size
+                                     , int& out_size)
 {
     return std::move(encode<codepage::cp_utf8, bo>(wstr, in_size, out_size));
 }
@@ -1255,7 +1281,8 @@ inline std::wstring UTF8ToUnicode(std::string const& bytes)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::wchar_ptr UTF8ToUnicode(char const* bytes, int in_size, int& out_size)
+inline codec::wchar_ptr UTF8ToUnicode(char const* bytes, int in_size
+                                      , int& out_size)
 {
     return std::move(decode<codepage::cp_utf8, bo>(bytes, in_size, out_size));
 }
@@ -1268,7 +1295,8 @@ inline std::string UnicodeToGB2312(std::wstring const& wstr)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::char_ptr UnicodeToGB2312(wchar_t const* wstr, int in_size, int& out_size)
+inline codec::char_ptr UnicodeToGB2312(wchar_t const* wstr, int in_size
+                                       , int& out_size)
 {
     return std::move(encode<codepage::cp_gb2312, bo>(wstr, in_size, out_size));
 }
@@ -1281,12 +1309,13 @@ inline std::wstring GB2312ToUnicode(std::string const& bytes)
 }
 
 template <bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline codec::wchar_ptr GB2312ToUnicode(char const* bytes, int in_size, int& out_size)
+inline codec::wchar_ptr GB2312ToUnicode(char const* bytes, int in_size
+                                        , int& out_size)
 {
     return std::move(decode<codepage::cp_gb2312, bo>(bytes, in_size, out_size));
 }
 
-}  // namespace una
+} // namespace una
 
 namespace codepage = una::codepage;
 namespace bom = una::bom;
@@ -1305,12 +1334,11 @@ using una::UTF8ToUnicode;
 using una::UnicodeToGB2312;
 using una::GB2312ToUnicode;
 
-}  // namespace ymh
+} // namespace ymh
 
-//===========================================================================// 
-// Others
-//
-//===========================================================================//
+/*****************************************************************************/
+/* Others */
+
 namespace ymh
 {
 namespace una
@@ -1329,7 +1357,8 @@ namespace utf8
 // @note ascii if step == 1
 //
 // return step if true else 0.
-inline std::uint8_t step_bytes(char const* bytes, int /*in_size*/, std::uint8_t step)
+inline std::uint8_t step_bytes(char const* bytes, int /*in_size*/
+                               , std::uint8_t step)
 {
     // single byte (ascii)
     //    0xxxxxxx
@@ -1348,18 +1377,18 @@ inline std::uint8_t step_bytes(char const* bytes, int /*in_size*/, std::uint8_t 
     // multi bytes
     //      110xxxxx 10xxxxxx
     //  ->  00000110 00000010
-    // 
+    //
     // step  = 2
     // 5     = 7 - step         = 8 - step [x 1] - 1 [x 0]
     // 0x06  = 2^(step + 1) - 2 = 2^(2 + 1) - 2
-    // 
+    //
     //      1110xxxxx 10xxxxxx 10xxxxxx
-    //  ->  000001110 00000010 00000010  
+    //  ->  000001110 00000010 00000010
     //
     // step  = 3
     // 4     = 7 - step         = 8 - step [x 1] - 1 [x 0] = 5
     // 0x0E  = 2^(step + 1) - 2 = 2^(3 + 1) - 2
-    if ((static_cast<unsigned char>(*bytes++) >> (7 - step)) 
+    if ((static_cast<unsigned char>(*bytes++) >> (7 - step))
         != static_cast<std::uint8_t>(std::pow(2.0, step + 1) - 2))
     {
         return 0;
@@ -1377,15 +1406,15 @@ inline std::uint8_t step_bytes(char const* bytes, int /*in_size*/, std::uint8_t 
 }
 
 inline bool is_utf8(char const* bytes, int in_size)
-{   
+{
     for (int i = 0; i != in_size; )
     {
         CONSTEXPR std::uint8_t utf8_max_bytes = 6;
         std::uint8_t const k = (in_size - i > utf8_max_bytes)
-            ? utf8_max_bytes : static_cast<std::uint8_t>(in_size - i);
+        ? utf8_max_bytes : static_cast<std::uint8_t>(in_size - i);
 
         for (std::uint8_t j = 1; j <= k; ++j)
-        // [1, utf8_max_bytes]
+            // [1, utf8_max_bytes]
         {
             if (step_bytes(bytes + i, in_size, j))
             {
@@ -1416,49 +1445,50 @@ inline bool is_utf8(std::string const& bytes)
     if ((std::numeric_limits<int>::max)() < in_size)
     {
         throw std::system_error(std::make_error_code
-            (std::errc::result_out_of_range)
-            , "Input character's size is out of range");
+                                (std::errc::result_out_of_range)
+                                , "Input character's size is out of range");
     }
-    
+
     return is_utf8(const_cast<char const*>(bytes.data())
-        , static_cast<int>(in_size));
+                   , static_cast<int>(in_size));
 }
 
 }  // namespace utf8
 
-inline codepage::type hint_codepage(char const* bytes, int in_size, bom::type* bo = nullptr)
+inline codepage::type hint_codepage(char const* bytes, int in_size
+                                    , bom::type* bo = nullptr)
 {
     // check bom bytes order mark.
     using namespace codepage;
     static codepage::type const cps[] = { cp_default
-                            , cp_utf8
-                            , cp_gb2312
-                            , cp_gb18030
-                            , cp_ucs2_le
-                            , cp_ucs2_be };
+                                          , cp_utf8
+                                          , cp_gb2312
+                                          , cp_gb18030
+                                          , cp_ucs2_le
+                                          , cp_ucs2_be };
     size_t const cps_size = sizeof(cps) / sizeof(*cps);
-    
+
     for (size_t i = 0; i != cps_size; ++i)
     {
         auto const bom = get_bom(cps[i]);
         auto const bom_size = bom.first;
         auto const bom_chars = bom.second;
-        
+
         if (!bom_chars || in_size < bom_size)
         {
             continue;
         }
-        
+
         auto p_bytes = bytes;
         for (auto p_bom = bom_chars; p_bom < bom_chars + bom_size
-            ; ++p_bom, ++p_bytes)
+             ; ++p_bom, ++p_bytes)
         {
             if (*p_bom != static_cast<decltype(*p_bom)>(*p_bytes))
             {
                 break;
             }
         }
-        
+
         if (p_bytes - bytes == bom_size)
         {
             if (bo)
@@ -1468,9 +1498,9 @@ inline codepage::type hint_codepage(char const* bytes, int in_size, bom::type* b
             return cps[i];
         }
     }
-    
+
     // check content.
- #if defined(_WIN32)
+#if defined(_WIN32)
     if (ucs2_le::is_ucs2_le(bytes, in_size))
     {
         if (bo)
@@ -1489,27 +1519,29 @@ inline codepage::type hint_codepage(char const* bytes, int in_size, bom::type* b
         }
         return cp_utf8;
     }
-    
+
     return cp_default; // can't check codepage
 }
 
-inline codepage::type hint_codepage(std::string const& bytes, bom::type* bo = nullptr)
+inline codepage::type hint_codepage(std::string const& bytes
+                                    , bom::type* bo = nullptr)
 {
     auto const in_size = bytes.size();
     if ((std::numeric_limits<int>::max)() < in_size)
     {
         throw std::system_error(std::make_error_code
-            (std::errc::result_out_of_range)
-            , "Input character's size is out of range");
+                                (std::errc::result_out_of_range)
+                                , "Input character's size is out of range");
     }
-    
+
     return hint_codepage(const_cast<char const*>(bytes.data())
-        , static_cast<int>(in_size), bo);
+                         , static_cast<int>(in_size), bo);
 }
 
 }  // namespace detail
 
-inline codepage::type hint_codepage(char const* bytes, int in_size, bom::type& bo)
+inline codepage::type hint_codepage(char const* bytes, int in_size
+                                    , bom::type& bo)
 {
     return detail::hint_codepage(bytes, in_size, &bo);
 }
@@ -1547,22 +1579,22 @@ inline bool is_ascii(std::string const& bytes)
     if ((std::numeric_limits<int>::max)() < in_size)
     {
         throw std::system_error(std::make_error_code
-            (std::errc::result_out_of_range)
-            , "Input character's size is out of range");
+                                (std::errc::result_out_of_range)
+                                , "Input character's size is out of range");
     }
-    
+
     return is_ascii(const_cast<char const*>(bytes.data())
-        , static_cast<int>(in_size));
+                    , static_cast<int>(in_size));
 }
 
 template <class CharT>
 inline std::string file_data(CharT const* filename)
 {
     std::string text;
-    
+
     std::ifstream ifile;
     ifile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    
+
     try
     {
         ifile.open(filename, std::ifstream::in | std::ifstream::binary);
@@ -1575,22 +1607,25 @@ inline std::string file_data(CharT const* filename)
                 break;
             }
             auto const text_size = text.size();
-            text.resize(text_size + static_cast<std::string::size_type>(fbuf_size));
+            text.resize(text_size
+                        + static_cast<std::string::size_type>(fbuf_size));
 
             auto const sget_size = fbuf->sgetn((char*)(text.data() + text_size)
-                , fbuf_size);
+                                               , fbuf_size);
             if (sget_size != fbuf_size)
             {
-                text.erase(text_size + static_cast<std::string::size_type>(sget_size));
+                text.erase(text_size
+                           + static_cast<std::string::size_type>(sget_size));
             }
         } while (fbuf->sgetc() != std::ifstream::traits_type::eof());
     }
     catch (std::ifstream::failure const& e)
     {
-        throw std::system_error(std::make_error_code
-            (std::errc::no_such_file_or_directory), e.what());
+        throw std::system_error(
+            std::make_error_code(std::errc::no_such_file_or_directory)
+            , e.what());
     }
-    
+
     return std::move(text);
 }
 
@@ -1599,9 +1634,9 @@ template <>
 inline std::string file_data<wchar_t>(wchar_t const* wfilename)
 {
     return file_data<char>(codec(codepage::cp_default
-        , bom::nobomb).encode(wfilename).c_str());
+                                 , bom::nobomb).encode(wfilename).c_str());
 }
-#endif  // !_MSC_VER
+#endif // !_MSC_VER
 
 inline std::string file_data(std::string const& filename)
 {
@@ -1628,7 +1663,7 @@ inline std::string file_data(T const& filename, std::error_code& ec)
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline std::string string_text(std::string const& raw)
 {
     bom::type bo_raw = codec::nobomb;
@@ -1639,10 +1674,10 @@ inline std::string string_text(std::string const& raw)
     }
     return std::move(codec(cp, bo)(codec(cp_raw, bo_raw)(raw)));
 }
- 
+
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline std::string 
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+inline std::string
 string_text(std::string const& raw, std::error_code& ec)
 {
     try
@@ -1677,7 +1712,7 @@ inline std::wstring wstring_text(std::string const& raw, std::error_code& ec)
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline std::string file_text(std::string const& filename)
 {
     auto const text_raw = file_data(filename);
@@ -1685,8 +1720,8 @@ inline std::string file_text(std::string const& filename)
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
-inline std::string 
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+inline std::string
 file_text(std::string const& filename, std::error_code& ec)
 {
     auto const text_raw = file_data(filename, ec);
@@ -1699,7 +1734,7 @@ inline std::wstring file_text(std::wstring const& wfilename)
     return std::move(wstring_text(text_raw));
 }
 
-inline std::wstring 
+inline std::wstring
 file_text(std::wstring const& wfilename, std::error_code& ec)
 {
     auto const text_raw = file_data(wfilename, ec);
@@ -1707,8 +1742,9 @@ file_text(std::wstring const& wfilename, std::error_code& ec)
 }
 
 inline size_t save_file_data(std::string const& filename
-    , std::string const& data
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::string const& data
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     std::ofstream ofile;
     ofile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -1721,25 +1757,28 @@ inline size_t save_file_data(std::string const& filename
     }
     catch (std::ofstream::failure const& e)
     {
-        throw std::system_error(std::make_error_code
-            (std::errc::no_such_file_or_directory), e.what());
+        throw std::system_error(
+            std::make_error_code(std::errc::no_such_file_or_directory)
+            , e.what());
     }
     return data.size();
 }
 
 inline size_t save_file_data(std::wstring const& wfilename
-    , std::string const& data
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::string const& data
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     return save_file_data(encode<codec::cp_default, codec::nobomb>(wfilename)
-        , data, mode);
+                          , data, mode);
 }
 
 template <class T>
 inline size_t save_file_data(T const& filename
-    , std::string const& data
-    , std::error_code& ec
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::string const& data
+                             , std::error_code& ec
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     try
     {
@@ -1753,22 +1792,24 @@ inline size_t save_file_data(T const& filename
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline size_t save_file_text(std::string const& filename
-    , std::string const& text
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::string const& text
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     std::string const text_en = convert<codepage::cp_default, cp
-        , bom::bomb, bo>(text);
+                                        , bom::bomb, bo>(text);
     return save_file_data(filename, text_en, mode);
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline size_t save_file_text(std::string const& filename
-    , std::string const& text
-    , std::error_code& ec
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::string const& text
+                             , std::error_code& ec
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     try
     {
@@ -1782,21 +1823,23 @@ inline size_t save_file_text(std::string const& filename
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline size_t save_file_text(std::wstring const& wfilename
-    , std::wstring const& wtext
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::wstring const& wtext
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     std::string const text_en = encode<cp, bo>(wtext);
     return save_file_data(wfilename, text_en, mode);
 }
 
 template <codepage::type cp CP_DEFAULT_TEMPLATE_ARG
-    , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
+          , bom::type bo BOM_DEFAULT_TEMPLATE_ARG>
 inline size_t save_file_text(std::wstring const& wfilename
-    , std::wstring const& wtext
-    , std::error_code& ec
-    , std::ios_base::openmode mode = std::ios_base::out|std::ios_base::binary)
+                             , std::wstring const& wtext
+                             , std::error_code& ec
+                             , std::ios_base::openmode mode
+                             = std::ios_base::out|std::ios_base::binary)
 {
     try
     {
@@ -1809,7 +1852,7 @@ inline size_t save_file_text(std::wstring const& wfilename
     return 0U;
 }
 
-}  // namespace una
+} // namespace una
 
 using una::is_ascii;
 using una::hint_codepage;
@@ -1823,7 +1866,6 @@ using una::save_file_data;
 using una::file_text;
 using una::save_file_text;
 
-}  // namespace ymh
+} // namespace ymh
 
 #endif  // YMH_UNA_HPP
-

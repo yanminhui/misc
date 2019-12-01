@@ -4,10 +4,10 @@
 
 /* Include boost.system before error.hpp 
  * if want to use:
- * 	- error_t::set_error_code(boost::system::error_code)
- * 	- error_t::make_error_code(boost::system::errc::errc_t)
- * 	- SET_ERROR_CODE()
- * 	- MAKE_ERROR_CODE()
+ *      - error_t::set_error_code(boost::system::error_code)
+ *      - error_t::make_error_code(boost::system::errc::errc_t)
+ *      - SET_ERROR_CODE()
+ *      - MAKE_ERROR_CODE()
  */
 // #include <boost/system/error_code.hpp>
 #include "error.hpp"
@@ -34,7 +34,8 @@ struct FileOp
         return "<data-from-file>";
     }
 
-    void Save(std::string const& filename, std::string const& data, ymh::error_t& e)
+    void Save(std::string const& filename, std::string const& data
+              , ymh::error_t& e)
     {
         MyFile mf;
         if (!mf.Open(filename))
@@ -92,9 +93,9 @@ int main()
         SET_SYSTEM_ERROR(e, errno);  // GetLastError()
         e.dump_backtrace(std::cout);
 
-        std::cout << "EXIT_FAILURE: " << e.value() << "-" << e.message() << std::endl;
+        std::cout << "EXIT_FAILURE: " << e.value()
+                  << "-" << e.message() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }
-

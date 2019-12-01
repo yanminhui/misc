@@ -6,38 +6,38 @@
  * Licensed under the MIT License <http://opensource.org/licenses/MIT>.
  * Copyright (c) 2019 yanminhui <mailto:yanminhui163@163.com>.
  *
- * Given a byte count, converts it to human-readable format 
- * and returns a string consisting of a value and a units indicator.
+ * Given a byte count, converts it to human-readable format and returns a
+ * string consisting of a value and a units indicator.
  *
- * Depending on the size of the value, the units part is bytes, 
- * KB (kibibytes), MB (mebibytes), GB (gibibytes), TB (tebibytes), 
- * or PB (pebibytes)...
+ * Depending on the size of the value, the units part is bytes, KB (kibibytes),
+ * MB (mebibytes), GB (gibibytes), TB (tebibytes), or PB (pebibytes)...
  *
  * [Function Prototype]
  *
  * (1)
- *   template<typename CharT, typename ByteT>
+ *   template <typename CharT, typename ByteT>
  *   CharT const* format_bytes(std::basic_string<CharT>& repr
  *                           , ByteT const bytes
  *                           , std::size_t const decimal=2u
  *                           , std::size_t const reduced_unit=1024u);
  * (2)
- *   template<typename CharT, typename ByteT, typename IndicatorT
-            , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
+ *   template <typename CharT, typename ByteT, typename IndicatorT
+ *          , typename = typename std::enable_if<
+ *                !std::is_integral<IndicatorT>::value>::type>
  *   CharT const* format_bytes(std::basic_string<CharT>& repr
  *                           , ByteT const bytes
  *                           , IndicatorT&& indicator
  *                           , std::size_t const decimal=2u
  *                           , std::size_t const reduced_unit=1024u);
  * (3)
- *   template<typename CharT, typename ByteT, typename InputIt>
+ *   template <typename CharT, typename ByteT, typename InputIt>
  *   CharT const* format_bytes(std::basic_string<CharT>& repr
  *                           , ByteT const bytes
  *                           , InputIt first, InputIt last
  *                           , std::size_t const decimal=2u
  *                           , std::size_t const reduced_unit=1024u);
  * (4)
- *   template<typename CharT, typename ByteT
+ *   template <typename CharT, typename ByteT
  *          , typename InputIt, typename IndicatorT>
  *   CharT const* format_bytes(std::basic_string<CharT>& repr
  *                           , ByteT const bytes
@@ -82,23 +82,23 @@ namespace ymh
 namespace misc
 {
 
-template<typename CharT, typename ByteT
-       , typename InputIt, typename IndicatorT>
+template <typename CharT, typename ByteT
+          , typename InputIt, typename IndicatorT>
 CharT const* format_bytes(std::basic_string<CharT>& repr
-                        , ByteT const bytes
-                        , InputIt first, InputIt last
-                        , IndicatorT&& indicator
-                        , std::size_t const decimal=2u
-                        , std::size_t const reduced_unit=1024u)
+                          , ByteT const bytes
+                          , InputIt first, InputIt last
+                          , IndicatorT&& indicator
+                          , std::size_t const decimal=2u
+                          , std::size_t const reduced_unit=1024u)
 {
-    constexpr auto before_begin_step = -1; 
+    constexpr auto before_begin_step = -1;
     if (first == last || bytes < 0)
     {
         throw std::system_error(std::make_error_code
-                (std::errc::invalid_argument), "format_bytes");
+                                (std::errc::invalid_argument), "format_bytes");
     }
 
-    // `indicator` may be 
+    // `indicator` may be
     // `CharT const*`, `CharT const[]` or `std::basic_string<CharT>`
     std::basic_string<CharT> indicator_s(indicator);
 
@@ -147,73 +147,73 @@ CharT const* format_bytes(std::basic_string<CharT>& repr
     return repr.c_str();
 }
 
-template<typename CharT, typename ByteT, typename InputIt>
+template <typename CharT, typename ByteT, typename InputIt>
 CharT const* format_bytes(std::basic_string<CharT>& repr
-                        , ByteT const bytes
-                        , InputIt first, InputIt last
-                        , std::size_t const decimal=2u
-                        , std::size_t const reduced_unit=1024u)
+                          , ByteT const bytes
+                          , InputIt first, InputIt last
+                          , std::size_t const decimal=2u
+                          , std::size_t const reduced_unit=1024u)
 {
     typename std::remove_reference<decltype(repr)>::type indicator;
     return format_bytes(repr, bytes, first, last, indicator
-                      , decimal, reduced_unit);
+                        , decimal, reduced_unit);
 }
 
-template<typename CharT, typename ByteT, typename IndicatorT
-       , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
+template <typename CharT, typename ByteT, typename IndicatorT
+          , typename = typename std::enable_if<
+                !std::is_integral<IndicatorT>::value>::type>
 CharT const* format_bytes(std::basic_string<CharT>& repr
-                        , ByteT const bytes
-                        , IndicatorT&& indicator
-                        , std::size_t const decimal=2u
-                        , std::size_t const reduced_unit=1024u)
+                          , ByteT const bytes
+                          , IndicatorT&& indicator
+                          , std::size_t const decimal=2u
+                          , std::size_t const reduced_unit=1024u)
 {
     struct Indicators final
     {
         char const* invoke(std::basic_string<char>& repr
-                         , ByteT const bytes
-                         , std::basic_string<char> const& indicator
-                         , std::size_t const decimal
-                         , std::size_t reduced_unit) const
+                           , ByteT const bytes
+                           , std::basic_string<char> const& indicator
+                           , std::size_t const decimal
+                           , std::size_t reduced_unit) const
         {
             constexpr char const* v[] = {"Bytes", "KB", "MB", "GB"
-                                       , "TB", "PB", "EB", "ZB", "YB"};
+                                         , "TB", "PB", "EB", "ZB", "YB"};
             constexpr auto c = sizeof(v) / sizeof(v[0]);
             return format_bytes(repr, bytes, v, v+c
-                              , indicator, decimal, reduced_unit);
+                                , indicator, decimal, reduced_unit);
         }
 
         wchar_t const* invoke(std::basic_string<wchar_t>& repr
-                            , ByteT const bytes
-                            , std::basic_string<wchar_t> const& indicator
-                            , std::size_t const decimal
-                            , std::size_t reduced_unit) const
+                              , ByteT const bytes
+                              , std::basic_string<wchar_t> const& indicator
+                              , std::size_t const decimal
+                              , std::size_t reduced_unit) const
         {
-            constexpr wchar_t const* v[] = {L"Bytes", L"KB", L"MB", L"GB"
-                                          , L"TB", L"PB", L"EB", L"ZB", L"YB"};
+            constexpr wchar_t const* v[] = {L"Bytes", L"KB", L"MB", L"GB", L"TB"
+                                            , L"PB", L"EB", L"ZB", L"YB"};
             constexpr auto c = sizeof(v) / sizeof(v[0]);
             return format_bytes(repr, bytes, v, v+c
-                              , indicator, decimal, reduced_unit);
+                                , indicator, decimal, reduced_unit);
         }
     };
 
     constexpr Indicators ind;
     return ind.invoke(repr, bytes, indicator
-                    , decimal, reduced_unit);
-}
-
-template<typename CharT, typename ByteT>
-CharT const* format_bytes(std::basic_string<CharT>& repr
-                        , ByteT const bytes
-                        , std::size_t const decimal=2u
-                        , std::size_t const reduced_unit=1024u)
-{
-    typename std::remove_reference<decltype(repr)>::type indicator;
-    return format_bytes(repr, bytes, indicator
                       , decimal, reduced_unit);
 }
 
-}  // namespace misc
-}  // namespace ymh
+template <typename CharT, typename ByteT>
+CharT const* format_bytes(std::basic_string<CharT>& repr
+                          , ByteT const bytes
+                          , std::size_t const decimal=2u
+                          , std::size_t const reduced_unit=1024u)
+{
+    typename std::remove_reference<decltype(repr)>::type indicator;
+    return format_bytes(repr, bytes, indicator
+                        , decimal, reduced_unit);
+}
+
+} // namespace misc
+} // namespace ymh
 
 #endif  // YMH_MISC_FORMAT_BYTES_HPP
-
