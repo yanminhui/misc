@@ -144,21 +144,21 @@ namespace detail
 
 // @ref https://www.crifan.com/
 //      files/doc/docbook/char_encoding/release/html/char_encoding.html
-CONSTEXPR unsigned char g_utf8_bom[] = { 0xEF, 0xBB, 0xBF };
-CONSTEXPR unsigned char g_gb18030_bom[] = { 0x84, 0x31, 0x95, 0x33 };
-CONSTEXPR unsigned char g_ucs2_le_bom[] = { 0xFF, 0xFE };
-CONSTEXPR unsigned char g_ucs2_be_bom[] = { 0xFE, 0xFF };
+CONSTEXPR unsigned char g_utf8_bom[]       = { 0xEF, 0xBB, 0xBF };
+CONSTEXPR unsigned char g_gb18030_bom[]    = { 0x84, 0x31, 0x95, 0x33 };
+CONSTEXPR unsigned char g_ucs2_le_bom[]    = { 0xFF, 0xFE };
+CONSTEXPR unsigned char g_ucs2_be_bom[]    = { 0xFE, 0xFF };
 
-CONSTEXPR unsigned char g_ucs4_le_bom[] = { 0xFF, 0xFE, 0x00, 0x00 };
-CONSTEXPR unsigned char g_ucs4_be_bom[] = { 0x00, 0x00, 0xFE, 0xFF };
-CONSTEXPR unsigned char g_utf7_bom[] = { 0x2B, 0x2F, 0x76, 0x38 };
-CONSTEXPR unsigned char g_utf7_bom2[] = { 0x2B, 0x2F, 0x76, 0x39 };
-CONSTEXPR unsigned char g_utf7_bom3[] = { 0x2B, 0x2F, 0x76, 0x2B };
-CONSTEXPR unsigned char g_utf7_bom4[] = { 0x2B, 0x2F, 0x76, 0x2F };
-CONSTEXPR unsigned char g_utf1_bom[] = { 0xF7, 0x64, 0x4C };
+CONSTEXPR unsigned char g_ucs4_le_bom[]    = { 0xFF, 0xFE, 0x00, 0x00 };
+CONSTEXPR unsigned char g_ucs4_be_bom[]    = { 0x00, 0x00, 0xFE, 0xFF };
+CONSTEXPR unsigned char g_utf7_bom[]       = { 0x2B, 0x2F, 0x76, 0x38 };
+CONSTEXPR unsigned char g_utf7_bom2[]      = { 0x2B, 0x2F, 0x76, 0x39 };
+CONSTEXPR unsigned char g_utf7_bom3[]      = { 0x2B, 0x2F, 0x76, 0x2B };
+CONSTEXPR unsigned char g_utf7_bom4[]      = { 0x2B, 0x2F, 0x76, 0x2F };
+CONSTEXPR unsigned char g_utf1_bom[]       = { 0xF7, 0x64, 0x4C };
 CONSTEXPR unsigned char g_utf_ebcdic_bom[] = { 0xDD, 0x73, 0x66, 0x73 };
-CONSTEXPR unsigned char g_scsu_bom[] = { 0x0E, 0xFE, 0xFF };
-CONSTEXPR unsigned char g_bocu1_bom[] = { 0xFB, 0xEE, 0x28 };
+CONSTEXPR unsigned char g_scsu_bom[]       = { 0x0E, 0xFE, 0xFF };
+CONSTEXPR unsigned char g_bocu1_bom[]      = { 0xFB, 0xEE, 0x28 };
 
 // <length, chars>
 inline std::pair<int, unsigned char const*> get_bom(codepage::type cp)
@@ -1132,7 +1132,7 @@ codec_impl::create_instance(codepage::type cp, bom::type bo)
     return std::make_shared<codec_type>(cp, bo);
 }
 
-}  // namespace detail
+} // namespace detail
 
 /*****************************************************************************/
 /* Convenient User Interface. */
