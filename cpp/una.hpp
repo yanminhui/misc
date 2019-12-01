@@ -1119,8 +1119,8 @@ public:
 namespace detail
 {
 
-std::shared_ptr<codec_impl> codec_impl::create_instance(codepage::type cp
-                                                        , bom::type bo)
+inline std::shared_ptr<codec_impl>
+codec_impl::create_instance(codepage::type cp, bom::type bo)
 {
 #if defined(_WIN32) || defined(_MSC_VER)
     typedef win_impl codec_type;
