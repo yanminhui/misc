@@ -52,10 +52,23 @@
 ;; Basic Customization
 ;; ===================================
 
-(setq inhibit-startup-message t)    ;; Hide the startup message
-(load-theme 'material t)            ;; Load material theme
-(global-linum-mode t)               ;; Enable line numbers globally
-(column-number-mode t)              ;; Enable column numbers globally
+(setq inhibit-startup-message t) ;; Hide the startup message
+(load-theme 'material t)         ;; Load material theme
+(global-linum-mode t)            ;; Enable line numbers globally
+(column-number-mode t)           ;; Enable column numbers globally
+
+(when (string-equal system-type "windows-nt")
+  (set-language-environment "Chinese-GB")      ;; Locale
+  (prefer-coding-system 'utf-8)                ;; Prefer coding
+  (set-fontset-font t 'chinese-gbk "微软雅黑") ;; Set fontset
+  (setq face-font-rescale-alist
+        '(("宋体" . 1.2)
+          ("微软雅黑" . 1.1)))
+  (setq tramp-restricted-shell-hosts-alist
+   	(quote (".*"))) ;; Tramp for plink 0.60.0.0
+  ;; (byte-compile-file
+  ;;  "C:/Program Files (x86)/emacs/lisp/net/tramp-sh.el") ;; Maybe needed
+  )
 
 ;; ====================================
 ;; Development Setup
@@ -112,17 +125,3 @@
 ;; Enable autopep8
 (require 'py-autopep8)
 (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (org-link-minor-mode yasnippet-snippets python-black py-autopep8 projectile material-theme groovy-mode flycheck elpy ein company-c-headers cmake-mode better-defaults))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
