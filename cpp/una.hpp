@@ -302,36 +302,36 @@ public:
         char_ptr out_ptr;
         int out_num = 0;
 
-        encode_impl(wstr, in_size, out_size
-                    , [&out_ptr, &out_num](int n) -> char*
-                      {
-                          out_num = n;
-                          char* cp = nullptr;
+        auto alloc = [&out_ptr, &out_num](int n) -> char*
+        {
+            out_num = n;
+            char* cp = nullptr;
 
-                          if (out_ptr)
-                          {
-                              cp = (char*)::realloc(out_ptr.release()
-                                                    , out_num * sizeof(char));
-                          }
-                          else
-                          {
-                              cp = (char*)::calloc(out_num, sizeof(char));
-                          }
+            if (out_ptr)
+            {
+                cp = (char*)::realloc(out_ptr.release()
+                                      , out_num * sizeof(char));
+            }
+            else
+            {
+                cp = (char*)::calloc(out_num, sizeof(char));
+            }
 
-                          if (!cp)
-                          {
-                              throw std::system_error(
-                                  std::make_error_code(
-                                      std::errc::not_enough_memory)
-                                  , "Allocate memory for encode");
-                          }
+            if (!cp)
+            {
+                throw std::system_error(
+                    std::make_error_code(
+                        std::errc::not_enough_memory)
+                    , "Allocate memory for encode");
+            }
 
-                          char_ptr p(cp);
-                          out_ptr.swap(p);
+            char_ptr p(cp);
+            out_ptr.swap(p);
 
-                          return out_ptr.get();
-                      });
-
+            return out_ptr.get();
+        };
+        
+        encode_impl(wstr, in_size, out_size, alloc);
         if (out_size < out_num)
         {
             out_ptr[out_size] = '\0';
@@ -353,12 +353,10 @@ public:
         std::string out;
         encode_impl(wstr.data(), static_cast<int>(in_size), out_size
                     , [&out](int n) -> char*
-                      {
-                          out.resize(n);
-                          return const_cast<char*>(out.data());
-                      }
-            );
-
+                    {
+                        out.resize(n);
+                        return const_cast<char*>(out.data());
+                    });
         out.resize(out_size);
         return out;
     }
@@ -368,38 +366,37 @@ public:
         wchar_ptr out_ptr;
         int out_num = 0;
 
-        decode_impl(bytes, in_size, out_size
-                    , [&out_ptr, &out_num](int n) -> wchar_t*
-                      {
-                          out_num = n;
-                          wchar_t* cp = nullptr;
+        auto alloc = [&out_ptr, &out_num](int n) -> wchar_t*
+        {
+            out_num = n;
+            wchar_t* cp = nullptr;
 
-                          if (out_ptr)
-                          {
-                              cp = (wchar_t*)::realloc(
-                                  out_ptr.release()
-                                  , out_num * sizeof(wchar_t));
-                          }
-                          else
-                          {
-                              cp = (wchar_t*)::calloc(out_num, sizeof(wchar_t));
-                          }
+            if (out_ptr)
+            {
+                cp = (wchar_t*)::realloc(
+                    out_ptr.release()
+                    , out_num * sizeof(wchar_t));
+            }
+            else
+            {
+                cp = (wchar_t*)::calloc(out_num, sizeof(wchar_t));
+            }
 
-                          if (!cp)
-                          {
-                              throw std::system_error(
-                                  std::make_error_code(
-                                      std::errc::not_enough_memory)
-                                  , "Allocate memory for decode");
-                          }
+            if (!cp)
+            {
+                throw std::system_error(
+                    std::make_error_code(
+                        std::errc::not_enough_memory)
+                    , "Allocate memory for decode");
+            }
 
-                          wchar_ptr p(cp);
-                          out_ptr.swap(p);
+            wchar_ptr p(cp);
+            out_ptr.swap(p);
 
-                          return out_ptr.get();
-                      }
-            );
+            return out_ptr.get();
+        };
 
+        decode_impl(bytes, in_size, out_size, alloc);
         if (out_size < out_num)
         {
             out_ptr.get()[out_size] = L'\0';
@@ -421,12 +418,10 @@ public:
         int out_size = 0;
         decode_impl(bytes.data(), static_cast<int>(in_size), out_size
                     , [&out](int n) -> wchar_t*
-                      {
-                          out.resize(n);
-                          return const_cast<wchar_t*>(out.data());
-                      }
-            );
-
+                    {
+                        out.resize(n);
+                        return const_cast<wchar_t*>(out.data());
+                    });
         out.resize(out_size);
         return out;
     }
@@ -1170,8 +1165,8 @@ template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
           , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
           , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-          , typename std::enable_if<
-              from_cp != to_cp || from_bo != to_bo, int>::type = 0 >
+, typename std::enable_if<
+    from_cp != to_cp || from_bo != to_bo, int>::type = 0 >
 #else
 >
 #endif
@@ -1205,8 +1200,8 @@ template <codepage::type from_cp CP_DEFAULT_TEMPLATE_ARG
           , bom::type from_bo BOM_DEFAULT_TEMPLATE_ARG
           , bom::type to_bo BOM_DEFAULT_TEMPLATE_ARG
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-          , typename std::enable_if<
-              from_cp != to_cp || from_bo != to_bo, int>::type = 0>
+, typename std::enable_if<
+    from_cp != to_cp || from_bo != to_bo, int>::type = 0>
 #else
 >
 #endif
