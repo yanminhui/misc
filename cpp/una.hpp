@@ -956,7 +956,7 @@ public:
             }
 
             // close
-            if (::iconv_close(cd) == static_cast<size_t>(-1))
+            if (::iconv_close(cd) == -1)
             {
                 throw std::system_error(
                     std::error_code(errno, std::system_category())
@@ -1094,7 +1094,7 @@ public:
             }
 
             // close
-            if (::iconv_close(cd) == static_cast<size_t>(-1))
+            if (::iconv_close(cd) == -1)
             {
                 throw std::system_error(
                     std::error_code(errno, std::system_category())
