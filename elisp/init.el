@@ -74,6 +74,12 @@
 ;; Development Setup
 ;; ====================================
 
+;; Makefile
+(add-hook 'makefile-mode-hook
+          '(lambda()
+            (setq indent-tabs-mode t)
+            ))
+
 ;; Default style
 (setq c-default-style
       '((c++-mode  . "stroustrup")
