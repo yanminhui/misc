@@ -16,7 +16,7 @@ readonly COLOR_WHITE=7
 
 function cecho() {
     local OPTION OPTARG OPTIND
-    while getopts 'niswebuf:g:' OPTION; do
+    while getopts 'niswebuf:g:L:' OPTION; do
         case "$OPTION" in
         n)
             local DONT_APPEND_NEWLINE='-n'
@@ -49,10 +49,13 @@ function cecho() {
         g)
             tput setab $OPTARG
             ;;
+        L)
+            local HYPERLINK=$OPTARG
+            ;;
         ?)
             cat << '_EOF_'
 Usage: 
-    cecho [-niswebu] [-fg color] [arg ...]
+    cecho [-niswebu] [-fg color] [-L url] [arg ...]
 
 Options:
     -n	do not append a newline
@@ -64,6 +67,7 @@ Options:
     -u  underlined text
     -f  set foreground color
     -g  set background color
+    -L  set hyperlink
 _EOF_
             return 1
             ;;
@@ -71,7 +75,13 @@ _EOF_
     done
     shift "$(($OPTIND - 1))"
 
-    echo $DONT_APPEND_NEWLINE "$@"`tput sgr0`
+    if [ $HYPERLINK ]; then
+        printf "\e]8;;%s\e\\%s\e]8;;\e\\" $HYPERLINK $*
+        tput sgr0
+        [ $DONT_APPEND_NEWLINE ] || printf "\n"
+    else
+        echo $DONT_APPEND_NEWLINE "$@"`tput sgr0`
+    fi
     return 0
 }
 
