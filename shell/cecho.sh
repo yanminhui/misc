@@ -5,11 +5,13 @@ set -e
 # usage: sgrcolor <color>
 function sgrcolor() {
     local -a COLORS=(black red green yellow blue magenta cyan white)
-    for i in ${!COLORS[@]}; do
-        if [[ ${COLORS[i]} == $1 ]]; then
+    local -i i=0
+    for c in ${COLORS[@]}; do
+        if [[ $c == $1 ]]; then
             echo $i
             return
         fi
+        ((++i))
     done
     [[ $1 == 'all' ]] && echo ${COLORS[*]} || echo $1
 }
