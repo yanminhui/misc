@@ -2,72 +2,80 @@
 
 set -e
 
-#
-# cecho - Write arguments to the standard output
-#
-readonly COLOR_BLACK=0
-readonly COLOR_RED=1
-readonly COLOR_GREEN=2
-readonly COLOR_YELLOW=3
-readonly COLOR_BLUE=4
-readonly COLOR_MAGENTA=5
-readonly COLOR_CYAN=6
-readonly COLOR_WHITE=7
+# usage: sgrcolor <color>
+function sgrcolor() {
+    local -a COLORS=(black red green yellow blue magenta cyan white)
+    for i in ${!COLORS[@]}; do
+        if [[ ${COLORS[i]} == $1 ]]; then
+            echo $i
+            return
+        fi
+    done
+    [[ $1 == 'all' ]] && echo ${COLORS[*]} || echo $1
+}
 
+# cecho - Write arguments to the standard output
 function cecho() {
     local OPTION OPTARG OPTIND
-    while getopts 'niswebuf:g:L:' OPTION; do
+    while getopts ':nISWEBUf:b:u:' OPTION; do
         case "$OPTION" in
         n)
-            local DONT_APPEND_NEWLINE='-n'
+            local DONT_APPEND_NEWLINE="\c"
             ;;
-        i)
+        I)
             tput bold
-            tput setaf $COLOR_CYAN
+            tput setaf "$(sgrcolor cyan)"
             ;;
-        s)
+        S)
             tput bold
-            tput setaf $COLOR_GREEN
+            tput setaf "$(sgrcolor green)"
             ;;
-        w)
+        W)
             tput bold
-            tput setaf $COLOR_YELLOW
+            tput setaf "$(sgrcolor yellow)"
             ;;
-        e)
+        E)
             tput bold
-            tput setaf $COLOR_RED
+            tput setaf "$(sgrcolor red)"
             ;;
-        b)
+        B)
             tput bold
             ;;
-        u)
+        U)
             tput smul
             ;;
         f)
-            tput setaf $OPTARG
+            tput setaf "$(sgrcolor $OPTARG)"
             ;;
-        g)
-            tput setab $OPTARG
+        b)
+            tput setab "$(sgrcolor $OPTARG)"
             ;;
-        L)
+        u)
             local HYPERLINK=$OPTARG
             ;;
         ?)
-            cat << '_EOF_'
+            tput sgr0
+            cat << _EOF_
+$0: illegal option -- $OPTARG
+
 Usage: 
-    cecho [-niswebu] [-fg color] [-L url] [arg ...]
+    cecho [-nISWEBU] [-fb color] [-u url] [arg ...]
 
 Options:
-    -n	do not append a newline
-    -i  info is light cyan text
-    -s  success is green text
-    -w  warning is yellow text
-    -e  error is red text
-    -b  bold text
-    -u  underlined text
-    -f  set foreground color
-    -g  set background color
-    -L  set hyperlink
+    -n	        do not append a newline
+    -I          info is light cyan text
+    -S          success is green text
+    -W          warning is yellow text
+    -E          error is red text
+    -B          bold text
+    -U          underlined text
+    -f <color>  set foreground color
+    -b <color>  set background color
+    -u <url>    set hyperlink url
+
+Color:
+    $(sgrcolor all)
+
 _EOF_
             return 1
             ;;
@@ -76,11 +84,14 @@ _EOF_
     shift "$(($OPTIND - 1))"
 
     if [ $HYPERLINK ]; then
-        printf "\e]8;;%s\e\\%s\e]8;;\e\\" $HYPERLINK $*
+        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK $*
         tput sgr0
         [ $DONT_APPEND_NEWLINE ] || printf "\n"
     else
-        echo $DONT_APPEND_NEWLINE "$@"`tput sgr0`
+        if [[ "$(echo \\)" != '\' ]]; then
+            local OPT_BACKSLASH_ESC='-e'
+        fi
+        echo $OPT_BACKSLASH_ESC "$@${DONT_APPEND_NEWLINE}"`tput sgr0`
     fi
     return 0
 }
