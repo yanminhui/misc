@@ -57,7 +57,7 @@ function cecho() {
             ;;
         ?)
             tput sgr0
-            cat << _EOF_
+            cat >&2 << _EOF_
 $0: illegal option -- $OPTARG
 
 Usage: 
@@ -90,7 +90,7 @@ _EOF_
         tput sgr0
         [ $DONT_APPEND_NEWLINE ] || printf "\n"
     else
-        if [[ "$(echo \\)" != '\' ]]; then
+        if [[ -z "$(echo -e)" ]]; then
             local OPT_BACKSLASH_ESC='-e'
         fi
         echo $OPT_BACKSLASH_ESC "$@${DONT_APPEND_NEWLINE}"`tput sgr0`
