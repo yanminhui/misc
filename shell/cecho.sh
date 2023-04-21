@@ -22,7 +22,9 @@ function cecho() {
     while getopts ':nISWEBUf:b:u:' OPTION; do
         case "$OPTION" in
         n)
-            local DONT_APPEND_NEWLINE="\c"
+            if [[ -z "$(echo -n)" ]]; then
+                local -r OPT_DONT_APPEND_NEWLINE='-n'
+            fi
             ;;
         I)
             tput bold
@@ -88,12 +90,12 @@ _EOF_
     if [ $HYPERLINK ]; then
         printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK $*
         tput sgr0
-        [ $DONT_APPEND_NEWLINE ] || printf "\n"
+        [ $OPT_DONT_APPEND_NEWLINE ] || printf "\n"
     else
         if [[ -z "$(echo -e)" ]]; then
-            local OPT_BACKSLASH_ESC='-e'
+            local -r OPT_BACKSLASH_ESC='-e'
         fi
-        echo $OPT_BACKSLASH_ESC "$@${DONT_APPEND_NEWLINE}"`tput sgr0`
+        echo $OPT_DONT_APPEND_NEWLINE $OPT_BACKSLASH_ESC "$@"`tput sgr0`
     fi
     return 0
 }
