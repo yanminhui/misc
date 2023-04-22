@@ -22,9 +22,7 @@ function cecho() {
     while getopts ':nISWEBUCf:b:u:' OPTION; do
         case "$OPTION" in
         n)
-            if [[ -z "$(echo -n)" ]]; then
-                local -r OPT_DONT_APPEND_NEWLINE='-n'
-            fi
+            local -r DONT_APPEND_NEWLINE='\c'
             ;;
         I)
             tput bold
@@ -91,29 +89,42 @@ _EOF_
     done
     shift "$(($OPTIND - 1))"
 
-    local DATA=''
-    if [[ $# -eq 0 && -s /dev/stdin || -f $1 ]]; then
-        local -r IFS=
-        while read -r line; do
-            [[ $DATA || -z $line ]] && DATA+="\n"
-            DATA+=$line
-        done < ${1:-/dev/stdin}
-    else
-        DATA=$@
-    fi
-
+    # for hyperlink
     [[ $CLEAR_END_OF_LINE ]] && tput el
     if [ $HYPERLINK ]; then
-        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK "$DATA"
+        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK "$*"
         tput sgr0
-        [ $OPT_DONT_APPEND_NEWLINE ] || printf "\n"
-    else
-        if [[ -z "$(echo -e)" ]]; then
-            local -r OPT_BACKSLASH_ESC='-e'
-        fi
-        echo $OPT_DONT_APPEND_NEWLINE $OPT_BACKSLASH_ESC "${DATA}"`tput sgr0`
+        [[ -n "$DONT_APPEND_NEWLINE" ]] || printf "\n"
+        return 0
     fi
+
+    if [[ -z "$(echo -e)" ]]; then
+        local -r OPT_BACKSLASH_ESC='-e'
+    fi
+
+    # for heredoc or file
+    if [[ $# -eq 0 && ! -t 0 || -f $1 ]]; then
+        local IFS=
+        local PREV_LINE
+        local CURR_LINE
+        local -i CALL_ONCE=0
+        while read -r CURR_LINE; do
+            if [[ $CALL_ONCE -eq 0 ]]; then
+                CALL_ONCE=1
+            else
+                [[ $CLEAR_END_OF_LINE ]] && tput el
+                echo $OPT_BACKSLASH_ESC "${PREV_LINE}${DONT_APPEND_NEWLINE}"
+            fi
+            PREV_LINE=$CURR_LINE
+        done < ${1:-/dev/stdin}
+        [[ $CLEAR_END_OF_LINE ]] && tput el
+        echo $OPT_BACKSLASH_ESC "${PREV_LINE}`tput sgr0`${DONT_APPEND_NEWLINE}"
+        return 0
+    fi
+
+    # for string
+    echo $OPT_BACKSLASH_ESC "$@`tput sgr0`${DONT_APPEND_NEWLINE}"
     return 0
 }
 
-# cecho "$@"
+cecho "$@"
