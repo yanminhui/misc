@@ -6,14 +6,14 @@ set -e
 function sgrcolor() {
     local -a COLORS=(black red green yellow blue magenta cyan white)
     local -i i=0
-    for c in ${COLORS[@]}; do
-        if [[ $c == $1 ]]; then
+    for C in "${COLORS[@]}"; do
+        if [[ $C == "$1" ]]; then
             echo $i
             return
         fi
         ((++i))
     done
-    [[ $1 == 'all' ]] && echo ${COLORS[*]} || echo $1
+    [[ $1 == 'all' ]] && echo "${COLORS[*]}" || echo "$1"
 }
 
 # cecho - Write arguments to the standard output
@@ -50,13 +50,13 @@ function cecho() {
             local -ri CLEAR_END_OF_LINE=1
             ;;
         f)
-            tput setaf "$(sgrcolor $OPTARG)"
+            tput setaf "$(sgrcolor "$OPTARG")"
             ;;
         b)
-            tput setab "$(sgrcolor $OPTARG)"
+            tput setab "$(sgrcolor "$OPTARG")"
             ;;
         u)
-            local -r HYPERLINK=$OPTARG
+            local -r HYPERLINK="$OPTARG"
             ;;
         ?)
             tput sgr0
@@ -87,12 +87,12 @@ _EOF_
             ;;
         esac
     done
-    shift "$(($OPTIND - 1))"
+    shift $((OPTIND - 1))
 
     # for hyperlink
-    [[ $CLEAR_END_OF_LINE ]] && tput el
-    if [ $HYPERLINK ]; then
-        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK "$*"
+    [[ -n "$CLEAR_END_OF_LINE" ]] && tput el
+    if [[ -n "$HYPERLINK" ]]; then
+        printf "\e]8;;%s\a%s\e]8;;\a" "$HYPERLINK" "$*"
         tput sgr0
         [[ -n "$DONT_APPEND_NEWLINE" ]] || printf "\n"
         return 0
@@ -112,18 +112,18 @@ _EOF_
             if [[ $CALL_ONCE -eq 0 ]]; then
                 CALL_ONCE=1
             else
-                [[ $CLEAR_END_OF_LINE ]] && tput el
+                [[ -n "$CLEAR_END_OF_LINE" ]] && tput el
                 echo $OPT_BACKSLASH_ESC "${PREV_LINE}${DONT_APPEND_NEWLINE}"
             fi
-            PREV_LINE=$CURR_LINE
-        done < ${1:-/dev/stdin}
-        [[ $CLEAR_END_OF_LINE ]] && tput el
-        echo $OPT_BACKSLASH_ESC "${PREV_LINE}`tput sgr0`${DONT_APPEND_NEWLINE}"
+            PREV_LINE="$CURR_LINE"
+        done < "${1:-/dev/stdin}"
+        [[ -n "$CLEAR_END_OF_LINE" ]] && tput el
+        echo $OPT_BACKSLASH_ESC "${PREV_LINE}$(tput sgr0)${DONT_APPEND_NEWLINE}"
         return 0
     fi
 
     # for string
-    echo $OPT_BACKSLASH_ESC "$@`tput sgr0`${DONT_APPEND_NEWLINE}"
+    echo $OPT_BACKSLASH_ESC "$*$(tput sgr0)${DONT_APPEND_NEWLINE}"
     return 0
 }
 
