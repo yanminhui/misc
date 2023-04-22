@@ -19,7 +19,7 @@ function sgrcolor() {
 # cecho - Write arguments to the standard output
 function cecho() {
     local OPTION OPTARG OPTIND
-    while getopts ':nISWEBUf:b:u:' OPTION; do
+    while getopts ':nISWEBUCf:b:u:' OPTION; do
         case "$OPTION" in
         n)
             if [[ -z "$(echo -n)" ]]; then
@@ -48,6 +48,9 @@ function cecho() {
         U)
             tput smul
             ;;
+        C)
+            local -ri CLEAR_END_OF_LINE=1
+            ;;
         f)
             tput setaf "$(sgrcolor $OPTARG)"
             ;;
@@ -55,7 +58,7 @@ function cecho() {
             tput setab "$(sgrcolor $OPTARG)"
             ;;
         u)
-            local HYPERLINK=$OPTARG
+            local -r HYPERLINK=$OPTARG
             ;;
         ?)
             tput sgr0
@@ -63,7 +66,7 @@ function cecho() {
 $0: illegal option -- $OPTARG
 
 Usage: 
-    cecho [-nISWEBU] [-fb color] [-u url] [arg ...]
+    cecho [-nISWEBUC] [-fb color] [-u url] [arg ...]
 
 Options:
     -n	        do not append a newline
@@ -73,6 +76,7 @@ Options:
     -E          error is red text
     -B          bold text
     -U          underlined text
+    -C          clear to end of line with background color
     -f <color>  set foreground color
     -b <color>  set background color
     -u <url>    set hyperlink url
@@ -87,17 +91,29 @@ _EOF_
     done
     shift "$(($OPTIND - 1))"
 
+    local DATA=''
+    if [[ $# -eq 0 && -s /dev/stdin || -f $1 ]]; then
+        local -r IFS=
+        while read -r line; do
+            [[ $DATA || -z $line ]] && DATA+="\n"
+            DATA+=$line
+        done < ${1:-/dev/stdin}
+    else
+        DATA=$@
+    fi
+
+    [[ $CLEAR_END_OF_LINE ]] && tput el
     if [ $HYPERLINK ]; then
-        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK $*
+        printf "\e]8;;%s\a%s\e]8;;\a" $HYPERLINK "$DATA"
         tput sgr0
         [ $OPT_DONT_APPEND_NEWLINE ] || printf "\n"
     else
         if [[ -z "$(echo -e)" ]]; then
             local -r OPT_BACKSLASH_ESC='-e'
         fi
-        echo $OPT_DONT_APPEND_NEWLINE $OPT_BACKSLASH_ESC "$@"`tput sgr0`
+        echo $OPT_DONT_APPEND_NEWLINE $OPT_BACKSLASH_ESC "${DATA}"`tput sgr0`
     fi
     return 0
 }
 
-cecho "$@"
+# cecho "$@"
