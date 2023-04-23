@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
 
-set -e
-
 # usage: sgrcolor <color>
 function sgrcolor() {
     local -a COLORS=(black red green yellow blue magenta cyan white)
     local -i i=0
+    if [[ "$1" == 'info' ]]; then
+        local -r SEL_COLOR='cyan'
+    elif [[ "$1" == 'succ' ]]; then
+        local -r SEL_COLOR='green'
+    elif [[ "$1" == 'warn' ]]; then
+        local -r SEL_COLOR='yellow'
+    elif [[ "$1" == 'error' ]]; then
+        local -r SEL_COLOR='red'
+    else
+        local -r SEL_COLOR="$1"
+    fi
     for C in "${COLORS[@]}"; do
-        if [[ $C == "$1" ]]; then
+        if [[ $C == "$SEL_COLOR" ]]; then
             echo $i
             return
         fi
@@ -16,30 +25,60 @@ function sgrcolor() {
     [[ $1 == 'all' ]] && echo "${COLORS[*]}" || echo "$1"
 }
 
+# setaf - set ANSI foreground color
+# usage: setaf <color>
+function setaf() {
+    if [[ -t 2 ]]; then
+        which tput >/dev/null 2>&1
+        [[ $? -eq 0 ]] && tput setaf $(sgrcolor "$1")
+    fi
+}
+
+# usage: hyperlink <url> <text>
+function hyperlink() {
+    if [[ ! -t 2 || $# -lt 2 ]]; then
+        return 0
+    fi
+    which tput >/dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        return 0
+    fi
+    local -r URL="$1"
+    shift
+    printf "\e]8;;%s\a%s\e]8;;\a" "$URL" "$*"
+}
+
 # cecho - Write arguments to the standard output
 function cecho() {
-    local -ri TPUT_ENABLE=$(test -t 2 && which tput > /dev/null 2>&1 && echo 1 || echo 0)
+    if [[ -t 2 ]]; then
+        which tput >/dev/null 2>&1
+        local -ri TPUT_ENABLE=!$?
+    fi
+    local -i TFRAME_MAX_COLS=79
+    if [[ $TPUT_ENABLE -eq 1 && $(tput cols) -lt $TFRAME_MAX_COLS ]]; then
+        local -i TFRAME_MAX_COLS=$(tput cols)
+    fi
     local OPTION OPTARG OPTIND
-    while getopts ':nISWEBUCf:b:u:' OPTION; do
+    while getopts ':nISWEBUCf:b:u:Hh:Vv:' OPTION; do
         case "$OPTION" in
             n)
                 local -r DONT_APPEND_NEWLINE='\c'
                 ;;
             I)
                 local -ri SGR_BOLD=1
-                local -r SGR_FOREGROUND_COLOR='cyan'
+                local -r SGR_FOREGROUND_COLOR='info'
                 ;;
             S)
                 local -ri SGR_BOLD=1
-                local -r SGR_FOREGROUND_COLOR='green'
+                local -r SGR_FOREGROUND_COLOR='succ'
                 ;;
             W)
                 local -ri SGR_BOLD=1
-                local -r SGR_FOREGROUND_COLOR='yellow'
+                local -r SGR_FOREGROUND_COLOR='warn'
                 ;;
             E)
                 local -ri SGR_BOLD=1
-                local -r SGR_FOREGROUND_COLOR='red'
+                local -r SGR_FOREGROUND_COLOR='error'
                 ;;
             B)
                 local -ri SGR_BOLD=1
@@ -59,13 +98,33 @@ function cecho() {
             u)
                 local -r HYPERLINK="$OPTARG"
                 ;;
+            H)
+                local -ri TFRAME_HLINE=$TFRAME_MAX_COLS
+                ;;
+            h)
+                if [[ $OPTARG -lt $TFRAME_MAX_COLS ]]; then
+                    local -ri TFRAME_HLINE=$OPTARG
+                else
+                    local -ri TFRAME_HLINE=$TFRAME_MAX_COLS
+                fi
+                ;;
+            V)
+                local -ri TFRAME_VLINE=$TFRAME_MAX_COLS
+                ;;
+            v)
+                if [[ $OPTARG -lt $TFRAME_MAX_COLS ]]; then
+                    local -ri TFRAME_VLINE=$OPTARG
+                else
+                    local -ri TFRAME_VLINE=$TFRAME_MAX_COLS
+                fi
+                ;;
             ?)
-                [[ "$TPUT_ENABLE" -eq 1 ]] && tput sgr0
+                [[ $TPUT_ENABLE -eq 1 ]] && tput sgr0
                 cat >&2 << _EOF_
 $0: illegal option -- $OPTARG
 
 Usage:
-    cecho [-nISWEBUC] [-fb color] [-u url] [arg ...]
+    cecho [-nISWEBUC] [-fb color] [-u url] [-H|-h cols] [-V|-v cols] [arg ...]
 
 Options:
     -n	        do not append a newline
@@ -79,6 +138,8 @@ Options:
     -f <color>  set foreground color
     -b <color>  set background color
     -u <url>    set hyperlink url
+    -H | -h <cols>  draw text frame horizontal line
+    -V | -v <cols>  draw text surrounded by text frame
 
 Color:
     $(sgrcolor all)
@@ -101,51 +162,103 @@ _EOF_
         "${SGR_INVIS:-0}"           \
         "${SGR_PROTECT:-0}"         \
         "${SGR_ALTCHARSET:-0}"
-        
+
         [[ -n "$SGR_BACKGROUND_COLOR" ]] && tput setab "$(sgrcolor "$SGR_BACKGROUND_COLOR")"
         [[ -n "$SGR_FOREGROUND_COLOR" ]] && tput setaf "$(sgrcolor "$SGR_FOREGROUND_COLOR")"
         
         local -r SGR_RESET=$(tput sgr0)
     fi
-    
-    # for hyperlink
-    if [[ -n "$HYPERLINK" ]]; then
-        [[ "$CLEAR_END_OF_LINE" -eq 1 ]] && tput el
-        printf "\e]8;;%s\a%s\e]8;;\a${SGR_RESET}" "$HYPERLINK" "$*"
-        [[ -n "$DONT_APPEND_NEWLINE" ]] || printf "\n"
-        return 0
-    fi
-    
+
     if [[ -z "$(echo -e)" ]]; then
         local -r OPT_BACKSLASH_ESC='-e'
     fi
-    
+
+    # for hyperlink
+    if [[ $TPUT_ENABLE -eq 1 && -n "$HYPERLINK" ]]; then
+        [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
+        local -r HL_TXT=$(hyperlink "$HYPERLINK" "$*")
+        echo $OPT_BACKSLASH_ESC "${HL_TXT}${SGR_RESET}${DONT_APPEND_NEWLINE}"
+        return 0
+    fi
+
     # for heredoc or file
     if [[ $# -eq 0 && ! -t 0 || -f $1 ]]; then
-        local IFS=
         local PREV_LINE
         local CURR_LINE
         local -i CALL_ONCE=0
-        while read -r CURR_LINE; do
+        while IFS= read -r CURR_LINE; do
             if [[ $CALL_ONCE -eq 0 ]]; then
                 CALL_ONCE=1
             else
-                [[ "$CLEAR_END_OF_LINE" -eq 1 ]] && tput el
+                [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
                 echo $OPT_BACKSLASH_ESC "${PREV_LINE}${DONT_APPEND_NEWLINE}"
             fi
             PREV_LINE="$CURR_LINE"
         done < "${1:-/dev/stdin}"
-        [[ "$CLEAR_END_OF_LINE" -eq 1 ]] && tput el
+        [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
         echo $OPT_BACKSLASH_ESC "${PREV_LINE}${SGR_RESET}${DONT_APPEND_NEWLINE}"
         return 0
     fi
     
+    [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
     # for string
-    [[ "$CLEAR_END_OF_LINE" -eq 1 ]] && tput el
-    echo $OPT_BACKSLASH_ESC "$*${SGR_RESET}${DONT_APPEND_NEWLINE}"
+    if [[ -z "$TFRAME_HLINE" && -z "$TFRAME_VLINE" ]]; then
+        echo $OPT_BACKSLASH_ESC "$*${SGR_RESET}${DONT_APPEND_NEWLINE}"
+        return 0
+    fi
+
+    # for text frame horizontal line
+    if [[ $# -eq 0 ]]; then
+        local -ri TFRAME_DASHS=${TFRAME_HLINE}-2
+        echo $OPT_BACKSLASH_ESC "+$(printf '\055%.0s' $(seq "$TFRAME_DASHS"))+${SGR_RESET}"
+        return 0
+    fi
+
+    # for text frame text
+    local -ri RESERVED_SIZE=${TFRAME_VLINE}-2
+    local -r RESERVED_TEXT="$(printf '\x20%.0s' $(seq "$RESERVED_SIZE"))"
+
+    local -r EXPR_REPLACE_TAB='s/\\t/\x20\x20\x20\x20\x20\x20/g'
+    local -r EXPR_ERASE_ANSI='s/\x1b\[[0-9;]*[a-zA-Z]//g'
+    local -r EXPR_ERASE_HYPERLINK='s/\x1b\]8;;\(.*\)\x07\(.*\)\x1b\]8;;\x07/\2/g'
+
+    local TEXT=$(echo "$*" | sed -e "$EXPR_REPLACE_TAB")
+    local -r TRIPED_TEXT=$(echo "$TEXT" | sed -e "$EXPR_ERASE_ANSI" -e "$EXPR_ERASE_HYPERLINK")
+
+    local TEXT="${TEXT}${RESERVED_TEXT:${#TRIPED_TEXT}}"
+    if [[ $TPUT_ENABLE -eq 1 ]]; then
+        tput hpa 0
+        if [[ $? -eq 0 ]]; then
+            echo $OPT_BACKSLASH_ESC "|${TEXT}$(tput hpa $((TFRAME_VLINE-1)))|${SGR_RESET}"
+            return 0
+        fi
+    fi
+    local TEXT=$(echo "$TEXT" | sed -e "$EXPR_ERASE_HYPERLINK")
+    echo $OPT_BACKSLASH_ESC "|${TEXT}|${SGR_RESET}"
     return 0
 }
 
-if [[ $# -gt 0 ]]; then
+if [[ -n "$TFRAME_RUN_EXAMPLE" ]]; then
+    declare -r CMAKE_VER=3.0.2
+    # text frame top line
+    cecho -H -I -b white
+    while IFS= read -r CURR_LINE; do
+        cecho -V -I -b white -- "$CURR_LINE"
+    done <<- _EOF_
+
+    $(hyperlink https://github.com/tdlib/td TDLib) depends on:
+        - $(setaf warn)C++14 compatible compiler$(setaf info)
+        - OpenSSL
+        - zlib
+        - $(setaf red)gperf (build only)$(setaf info)
+        - CMake (${CMAKE_VER}+, build only)
+        - PHP (optional, for documentation generation)
+
+_EOF_
+    # text frame bottomline
+    cecho -H -I -b white
+fi
+
+if [[ -n "$RUN_CECHO" ]]; then
     cecho "$@"
 fi
