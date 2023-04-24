@@ -4,17 +4,23 @@
 function sgrcolor() {
     local -a COLORS=(black red green yellow blue magenta cyan white)
     local -i i=0
-    if [[ "$1" == 'info' ]]; then
-        local -r SEL_COLOR='cyan'
-    elif [[ "$1" == 'succ' ]]; then
-        local -r SEL_COLOR='green'
-    elif [[ "$1" == 'warn' ]]; then
-        local -r SEL_COLOR='yellow'
-    elif [[ "$1" == 'error' ]]; then
-        local -r SEL_COLOR='red'
-    else
-        local -r SEL_COLOR="$1"
-    fi
+    case "$1" in
+        info)
+            local -r SEL_COLOR='cyan'
+            ;;
+        succ)
+            local -r SEL_COLOR='green'
+            ;;
+        warn)
+            local -r SEL_COLOR='yellow'
+            ;;
+        error)
+            local -r SEL_COLOR='red'
+            ;;
+        *)
+            local -r SEL_COLOR="$1"
+            ;;
+    esac
     for C in "${COLORS[@]}"; do
         if [[ $C == "$SEL_COLOR" ]]; then
             echo $i
@@ -36,15 +42,17 @@ function setaf() {
 
 # usage: hyperlink <url> <text>
 function hyperlink() {
-    if [[ ! -t 2 || $# -lt 2 ]]; then
+    local -r URL="$1"
+    shift
+    if [[ ! -t 2 || $# -lt 1 ]]; then
+        echo "$*"
         return 0
     fi
     which tput >/dev/null 2>&1
     if [[ $? != 0 ]]; then
+        echo "$*"
         return 0
     fi
-    local -r URL="$1"
-    shift
     printf "\e]8;;%s\a%s\e]8;;\a" "$URL" "$*"
 }
 
@@ -195,9 +203,11 @@ _EOF_
             fi
             PREV_LINE="$CURR_LINE"
         done < "${1:-/dev/stdin}"
-        [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
-        echo $OPT_BACKSLASH_ESC "${PREV_LINE}${SGR_RESET}${DONT_APPEND_NEWLINE}"
-        return 0
+        if [[ $CALL_ONCE != 0 ]]; then
+            [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
+            echo $OPT_BACKSLASH_ESC "${PREV_LINE}${SGR_RESET}${DONT_APPEND_NEWLINE}"
+            return 0
+        fi
     fi
     
     [[ $CLEAR_END_OF_LINE -eq 1 ]] && tput el
