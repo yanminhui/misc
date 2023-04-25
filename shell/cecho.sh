@@ -248,6 +248,34 @@ _EOF_
     return 0
 }
 
+# puts - print status string
+function puts() {
+    local OPTION OPTARG OPTIND
+    while getopts 'c:l:' OPTION; do
+        case "$OPTION" in
+            c)
+                local -r COLOR="$OPTARG"
+                ;;
+            l)
+                local -r LABEL="$OPTARG"
+                ;;
+            ?)
+                cecho "usage: puts [-c <color>] [-l <label>] [action] [arg...]"
+                ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    cecho -n -f "$COLOR" -- "${LABEL:-==>}\x20"
+    if [[ $# == 1 ]]; then
+        cecho -B -- "$1"
+    elif [[ $# -gt 1 ]]; then
+        cecho -n -B -- "$1\x20"
+        shift
+        cecho -B -f "$COLOR"  -- "$*"
+    fi
+}
+
 if [[ -n "$TFRAME_RUN_EXAMPLE" ]]; then
     declare -r CMAKE_VER=3.0.2
     # text frame top line
