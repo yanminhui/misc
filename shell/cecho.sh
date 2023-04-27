@@ -228,12 +228,12 @@ _EOF_
     local -ri RESERVED_SIZE=${TFRAME_VLINE}-2
     local -r RESERVED_TEXT="$(printf '\x20%.0s' $(seq "$RESERVED_SIZE"))"
 
-    local -r EXPR_REPLACE_TAB='s/\\t/\x20\x20\x20\x20\x20\x20/g'
+    local -r EXPR_REPLACE_TAB="s/\t/\x20\x20\x20\x20\x20\x20/g"
     local -r EXPR_ERASE_ANSI='s/\x1b\[[0-9;]*[a-zA-Z]//g'
     local -r EXPR_ERASE_HYPERLINK='s/\x1b\]8;;\(.*\)\x07\(.*\)\x1b\]8;;\x07/\2/g'
 
-    local TEXT=$(echo "$*" | sed -e "$EXPR_REPLACE_TAB")
-    local -r TRIPED_TEXT=$(echo "$TEXT" | sed -e "$EXPR_ERASE_ANSI" -e "$EXPR_ERASE_HYPERLINK")
+    local TEXT=$(echo $OPT_BACKSLASH_ESC "$*" | sed -e "$EXPR_REPLACE_TAB")
+    local -r TRIPED_TEXT=$(echo $OPT_BACKSLASH_ESC "$TEXT" | sed -e "$EXPR_ERASE_ANSI" -e "$EXPR_ERASE_HYPERLINK")
 
     local TEXT="${TEXT}${RESERVED_TEXT:${#TRIPED_TEXT}}"
     if [[ $TPUT_ENABLE -eq 1 ]]; then
